@@ -15,8 +15,8 @@ from collections import deque
 from collections.abc import Iterable
 from io import StringIO
 
-from .dec_table import dec as DEC_TABLE
-from .enc_table import enc as ENC_TABLE
+from ._dec_table import dec as DEC_TABLE
+from ._enc_table import enc as ENC_TABLE
 
 
 class Peekable[T]:

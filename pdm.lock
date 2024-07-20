@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:f91b28c444a805d934a179e256de6b0286c5d7cf53773b79c9c85961d07f087d"
+content_hash = "sha256:aa4d26840b313ed2c37348185a3da56a19b58e97a2383e7877ee819b8d9a9b79"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -72,6 +72,37 @@ files = [
     {file = "aiosignal-1.3.1-py3-none-any.whl", hash = "sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17"},
     {file = "aiosignal-1.3.1.tar.gz", hash = "sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc"},
 ]
+
+[[package]]
+name = "apsw"
+version = "3.46.0.1"
+requires_python = ">=3.8"
+summary = "Another Python SQLite Wrapper"
+groups = ["default"]
+marker = "python_version == \"3.12\""
+files = [
+    {file = "apsw-3.46.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:9c68414281a08a94b8b5c311da59d038bf99217fea5436f9527a0655a4409496"},
+    {file = "apsw-3.46.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:50434559a7f2c06ffe48ba8f07d8b330c47674e651b0f32449fa23bef168e516"},
+    {file = "apsw-3.46.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:354e2f3ad37d8ca3afdeac7dcaf5cae9340cf70a819ccf86d6300114b970ff61"},
+    {file = "apsw-3.46.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:347d039d7f6ebe05111516465057007a86aa60ced1122f98f5e2a14bb40febeb"},
+    {file = "apsw-3.46.0.1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fd382205968bede44d074742c8e99efdb10138fdab1c584f4fb810b6543bed16"},
+    {file = "apsw-3.46.0.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:6c5c2115e5b45d5ad7c0e6f19a0ee571d256f0d12937182625ce7028ddb73eae"},
+    {file = "apsw-3.46.0.1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:12fe2fca3525431dbb459a4a6aa3bde11d65f47665c76a56b5fced850a7a421e"},
+    {file = "apsw-3.46.0.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:469366689ec6cbf526260d0aa241090b876e55cbf7615a3c6e79715cb789bfdd"},
+    {file = "apsw-3.46.0.1-cp312-cp312-win32.whl", hash = "sha256:7ae47a7de0ca9eeee462580a1d1b7e30097ebfac4bd8d69f3b049d11095ca72f"},
+    {file = "apsw-3.46.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:347774ee0388ee14cdf54849b2983a9959740457c36a213d3b63e828af3d4c3a"},
+    {file = "apsw-3.46.0.1.tar.gz", hash = "sha256:a36d1e80180d1dc9c079f766dead8204dfeb1c80707676f9b75c1705800fe7d0"},
+]
+
+[[package]]
+name = "async-utils"
+version = "4.0.5"
+requires_python = ">=3.10.0"
+git = "https://github.com/mikeshardmind/async-utils"
+revision = "0aa4010a6b84150a7e5530382acdaf93e60ddfe4"
+summary = "Various async utilities"
+groups = ["default"]
+marker = "python_version == \"3.12\""
 
 [[package]]
 name = "attrs"

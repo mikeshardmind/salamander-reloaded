@@ -62,6 +62,8 @@ dependencies = [
     "typing-extensions>=4.12.2",
     "xxhash>=3.4.1",
     "platformdirs>=4.2.2",
+    "apsw>=3.46.0.1",
+    "async-utils @ git+https://github.com/mikeshardmind/async-utils",
 ]
 version = "0.1.0"
 

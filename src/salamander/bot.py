@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import apsw
+import apsw.bestpractice
 import discord
 import msgspec
 import xxhash
@@ -23,10 +24,17 @@ import xxhash
 from . import base2048
 from .dice import dice_group
 from .notes import add_note_ctx, get_note_ctx
-from .utils import platformdir_stuff, resolve_path_with_links
+from .tags import tag_group
+from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
 
-class VersionableTree(discord.app_commands.CommandTree):
+class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
+    async def interaction_check(self, interaction: discord.Interaction[Salamander]) -> bool:
+        if interaction.client.is_blocked(interaction.user.id):
+            await interaction.response.send_message("Nope.", ephemeral=True)
+            return False
+        return True
+
     async def get_hash(self, tree: discord.app_commands.CommandTree) -> bytes:
         commands = sorted(self._get_all_commands(guild=None), key=lambda c: c.qualified_name)
 
@@ -50,11 +58,47 @@ class Salamander(discord.AutoShardedClient):
         )
         db_path = platformdir_stuff.user_data_path / "salamander.db"
         self.conn: apsw.Connection = apsw.Connection(str(db_path.resolve()))
+        self.block_cache: LRU[int, bool] = LRU(512)
+
+    def set_blocked(self, user_id: int, blocked: bool) -> None:
+        self.block_cache[user_id] = blocked
+        with self.conn:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO discord_users (user_id, is_blocked)
+                VALUES (?, ?)
+                ON CONFLICT (user_id)
+                DO UPDATE SET is_blocked=excluded.is_blocked
+                """,
+                (user_id, blocked),
+            )
+
+    def is_blocked(self, user_id: int) -> bool:
+        blocked = self.block_cache.get(user_id, None)
+        if blocked is not None:
+            return blocked
+
+        cursor = self.conn.cursor()
+
+        row = cursor.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM discord_users WHERE user_id=? AND is_blocked LIMIT 1
+            );
+            """,
+            (user_id,),
+        ).fetchone()
+        assert row is not None, "SELECT EXISTS top level query is always going to have a result..."
+        b: bool = row[0]
+        self.block_cache[user_id] = b
+        return b
 
     async def setup_hook(self) -> None:
         self.tree.add_command(dice_group)
         self.tree.add_command(add_note_ctx)
         self.tree.add_command(get_note_ctx)
+        self.tree.add_command(tag_group)
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)
         tree_hash = await self.tree.get_hash(self.tree)
@@ -132,6 +176,7 @@ def ensure_schema() -> None:
 
 def main() -> None:
     os.umask(0o077)
+    apsw.bestpractice.apply(apsw.bestpractice.recommended)  # pyright: ignore[reportUnknownMemberType]
     parser = argparse.ArgumentParser(description="A minimal configuration discord bot for role menus")
     excl_setup = parser.add_mutually_exclusive_group()
     excl_setup.add_argument("--setup", action="store_true", default=False, help="Run interactive setup.", dest="isetup")

@@ -9,10 +9,36 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Generic, TypeVar
 
 import platformdirs
 
 platformdir_stuff = platformdirs.PlatformDirs("salamander", "mikeshardmind", roaming=False)
+
+K = TypeVar("K")
+V = TypeVar("V")
+T = TypeVar("T")
+
+
+class LRU(Generic[K, V]):
+    def __init__(self, maxsize: int, /):
+        self.cache: dict[K, V] = {}
+        self.maxsize = maxsize
+
+    def get(self, key: K, default: T, /) -> V | T:
+        if key not in self.cache:
+            return default
+        self.cache[key] = self.cache.pop(key)
+        return self.cache[key]
+
+    def __getitem__(self, key: K, /) -> V:
+        self.cache[key] = self.cache.pop(key)
+        return self.cache[key]
+
+    def __setitem__(self, key: K, value: V, /) -> None:
+        self.cache[key] = value
+        if len(self.cache) > self.maxsize:
+            self.cache.pop(next(iter(self.cache)))
 
 
 def resolve_path_with_links(path: Path, folder: bool = False) -> Path:

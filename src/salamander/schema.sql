@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS discord_users (
 CREATE TABLE IF NOT EXISTS user_tags (
 	user_id INTEGER NOT NULL REFERENCES discord_users (user_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
-	kb_article_name TEXT NOT NULL,
+	tag_name TEXT NOT NULL,
 	content TEXT NOT NULL,
 	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY (user_id, kb_article_name)
+	PRIMARY KEY (user_id, tag_name)
 ) STRICT, WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS user_notes (

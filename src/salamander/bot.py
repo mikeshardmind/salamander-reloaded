@@ -23,6 +23,7 @@ import xxhash
 
 from . import base2048
 from .dice import dice_group
+from .infotools import raw_content, user_avatar
 from .notes import add_note_ctx, get_note_ctx
 from .tags import tag_group
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
@@ -95,10 +96,12 @@ class Salamander(discord.AutoShardedClient):
         return b
 
     async def setup_hook(self) -> None:
-        self.tree.add_command(dice_group)
-        self.tree.add_command(add_note_ctx)
+        self.tree.add_command(raw_content)
+        self.tree.add_command(user_avatar)
         self.tree.add_command(get_note_ctx)
+        self.tree.add_command(add_note_ctx)
         self.tree.add_command(tag_group)
+        self.tree.add_command(dice_group)
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)
         tree_hash = await self.tree.get_hash(self.tree)

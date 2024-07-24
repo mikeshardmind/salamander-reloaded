@@ -68,7 +68,7 @@ async def user_tag_create(itx: discord.Interaction, name: discord.app_commands.R
     await itx.response.send_modal(TagModal(tag_name=name, author_id=itx.user.id))
 
 
-@tag_group.command(name="get", extras={})
+@tag_group.command(name="get")
 async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
     """Get some content"""
     cursor: apsw.Cursor = itx.client.conn.cursor()
@@ -86,33 +86,46 @@ async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands
         await itx.response.send_message(content)
 
 
+@tag_group.command(name="delete")
+async def user_tag_del(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
+    """Delete a tag."""
+    conn: apsw.Connection = itx.client.conn
+    with conn:
+        cursor = conn.cursor()
+        row = cursor.execute(
+            """
+            DELETE FROM user_tags
+            WHERE author_id = ? AND tag_name = ?
+            RETURNING 1
+            """,
+            (itx.user.id, name),
+        ).fetchone()
+        msg = "Tag Deleted" if row else "No such tag"
+    await itx.response.send_message(msg, ephemeral=True)
+
+
+_cache: LRU[tuple[int, str], list[app_commands.Choice[str]]] = LRU(1024)
+
+
+@user_tag_del.autocomplete("name")
 @user_tag_get.autocomplete("name")
 async def tag_autocomplete(
     itx: discord.Interaction[Any],
     current: str,
 ) -> list[app_commands.Choice[str]]:
-    cache: LRU[tuple[int, str], list[app_commands.Choice[str]]]
-    if itx.command:
-        extras = itx.command.extras
-        if "cache" not in itx.command.extras:
-            extras["cache"] = LRU(1024)
+    # TODO: smarter trie based cache? is it worth it?
+    val = _cache.get((itx.user.id, current), None)
 
-        cache = extras["cache"]
-        # TODO: smarter trie based cache? is it worth it?
-        val = cache.get((itx.user.id, current), None)
+    if val is not None:
+        return val
 
-        if val is not None:
-            return val
-
-        cursor: apsw.Cursor = itx.client.conn.cursor()
-        # TODO: FTS index instead
-        row = cursor.execute(
-            """
-            SELECT tag_name FROM user_tags WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
-            """,
-            (itx.user.id, current),
-        )
-        cache[(itx.user.id, current)] = r = [app_commands.Choice(name=c, value=c) for c in chain.from_iterable(row)]
-        return r
-
-    return []
+    cursor: apsw.Cursor = itx.client.conn.cursor()
+    # TODO: FTS index instead
+    row = cursor.execute(
+        """
+        SELECT tag_name FROM user_tags WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
+        """,
+        (itx.user.id, current),
+    )
+    _cache[(itx.user.id, current)] = r = [app_commands.Choice(name=c, value=c) for c in chain.from_iterable(row)]
+    return r

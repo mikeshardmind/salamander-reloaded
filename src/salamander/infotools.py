@@ -14,7 +14,6 @@ import discord
 
 
 def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
-
     em = discord.Embed()
     em.set_footer(text=f"Discord ID: {member.id}")
     avatar = member.display_avatar.with_static_format("png")
@@ -30,7 +29,6 @@ async def user_avatar(itx: discord.Interaction, user: discord.User | discord.Mem
 
 @discord.app_commands.context_menu(name="Raw Content")
 async def raw_content(itx: discord.Interaction, message: discord.Message) -> None:
-
     c = message.content
     if not c:
         await itx.response.send_message("No content", ephemeral=True)

@@ -194,7 +194,7 @@ dependencies = [
     "Brotli",
     "aiodns>=1.1",
     "cchardet==2.1.7; python_version < \"3.10\"",
-    "discord-py @ git+https://github.com/mikeshardmind/discord.py@testing/msgspec",
+    "discord-py @ git+https://github.com/mikeshardmind/discord.py@d23d9c73b9b237fbbf921da57bd518621c4a9ac7",
     "msgspec>=0.18.6",
 ]
 

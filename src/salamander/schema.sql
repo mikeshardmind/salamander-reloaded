@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS discord_users (
     last_interaction TEXT DEFAULT CURRENT_TIMESTAMP
 ) STRICT, WITHOUT ROWID;
 
-
 CREATE TABLE IF NOT EXISTS user_tags (
 	user_id INTEGER NOT NULL REFERENCES discord_users (user_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
@@ -31,12 +30,11 @@ CREATE TABLE IF NOT EXISTS user_tags (
 	PRIMARY KEY (user_id, kb_article_name)
 ) STRICT, WITHOUT ROWID;
 
-
 CREATE TABLE IF NOT EXISTS user_notes (
 	author_id INTEGER NOT NULL REFERENCES discord_users (user_id)
 		ON UPDATE CASCADE ON DELETE CASCADE,
-	target_user_id TEXT NOT NULL,
+	target_id INTEGER NOT NULL,
 	content TEXT NOT NULL,
 	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY (user_id, target_user_id, created_at)
+	PRIMARY KEY (author_id, target_id, created_at)
 ) STRICT, WITHOUT ROWID;

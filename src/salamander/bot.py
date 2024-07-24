@@ -11,33 +11,19 @@ from __future__ import annotations
 import argparse
 import getpass
 import os
+import re
 from pathlib import Path
 from typing import Any
 
+import apsw
 import discord
 import msgspec
-import platformdirs
 import xxhash
 
 from . import base2048
 from .dice import dice_group
-
-platformdir_stuff = platformdirs.PlatformDirs("salamander", "mikeshardmind", roaming=False)
-
-
-def resolve_path_with_links(path: Path, folder: bool = False) -> Path:
-    """
-    Python only resolves with strict=True if the path exists.
-    """
-    try:
-        return path.resolve(strict=True)
-    except FileNotFoundError:
-        path = resolve_path_with_links(path.parent, folder=True) / path.name
-        if folder:
-            path.mkdir(mode=0o700)  # python's default is world read/write/traversable... (0o777)
-        else:
-            path.touch(mode=0o600)  # python's default is world read/writable... (0o666)
-        return path.resolve(strict=True)
+from .notes import add_note_ctx, get_note_ctx
+from .utils import platformdir_stuff, resolve_path_with_links
 
 
 class VersionableTree(discord.app_commands.CommandTree):
@@ -62,9 +48,13 @@ class Salamander(discord.AutoShardedClient):
             allowed_contexts=discord.app_commands.AppCommandContext(dm_channel=True, guild=True, private_channel=True),
             allowed_installs=discord.app_commands.AppInstallationType(user=True, guild=False),
         )
+        db_path = platformdir_stuff.user_data_path / "salamander.db"
+        self.conn: apsw.Connection = apsw.Connection(str(db_path.resolve()))
 
     async def setup_hook(self) -> None:
         self.tree.add_command(dice_group)
+        self.tree.add_command(add_note_ctx)
+        self.tree.add_command(get_note_ctx)
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)
         tree_hash = await self.tree.get_hash(self.tree)
@@ -118,6 +108,28 @@ def run_bot() -> None:
     client.run(token)
 
 
+def ensure_schema() -> None:
+    # The below is a hack of a solution, but it only runs against a trusted file
+    # I don't want to have the schema repeated in multiple places
+
+    db_path = platformdir_stuff.user_data_path / "salamander.db"
+    conn = apsw.Connection(str(db_path))
+    cursor = conn.cursor()
+
+    schema_location = (Path(__file__)).with_name("schema.sql")
+    with schema_location.open(mode="r") as f:
+        to_execute: list[str] = []
+        for line in f.readlines():
+            text = line.strip()
+            # This isn't naive escaping, it's removing comments in a trusted file
+            if text and not text.startswith("--"):
+                to_execute.append(text)
+
+    # And this is just splitting statements at semicolons without removing the semicolons
+    for match in re.finditer(r"[^;]+;", " ".join(to_execute)):
+        cursor.execute(match.group(0))
+
+
 def main() -> None:
     os.umask(0o077)
     parser = argparse.ArgumentParser(description="A minimal configuration discord bot for role menus")
@@ -136,7 +148,9 @@ def main() -> None:
     elif args.token:
         _store_token(args.token)
     else:
+        ensure_schema()
         run_bot()
+
 
 if __name__ == "__main__":
     main()

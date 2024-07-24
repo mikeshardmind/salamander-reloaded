@@ -14,6 +14,7 @@ ignore = [
     "G002",  # erroneous issue with %-logging when logging can be confiured for % logging
     "S101",  # use of assert here is a known quantity, blame typing memes
     "PLR2004",  # Magic value comparison, may remove later
+    "PLC0105",  # no, I don't like co naming style for typevars, bye
     "SIM105",  # supressable exception, I'm not paying the overhead of contextlib.supress for stylistic choices.
     "C90",  # mccabe complexity memes
     "ANN101", # missing "Self" annotation, self is implicit

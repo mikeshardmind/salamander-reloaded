@@ -15,6 +15,8 @@ import apsw
 import discord
 from discord import app_commands
 
+from .utils import LRU
+
 tag_group = app_commands.Group(name="tag", description="Store and recall content")
 
 
@@ -66,7 +68,7 @@ async def user_tag_create(itx: discord.Interaction, name: discord.app_commands.R
     await itx.response.send_modal(TagModal(tag_name=name, author_id=itx.user.id))
 
 
-@tag_group.command(name="get")
+@tag_group.command(name="get", extras={})
 async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
     """Get some content"""
     cursor: apsw.Cursor = itx.client.conn.cursor()
@@ -89,11 +91,28 @@ async def tag_autocomplete(
     itx: discord.Interaction[Any],
     current: str,
 ) -> list[app_commands.Choice[str]]:
-    cursor: apsw.Cursor = itx.client.conn.cursor()
-    row = cursor.execute(
-        """
-        SELECT tag_name FROM user_tags WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
-        """,
-        (itx.user.id, current),
-    )
-    return [app_commands.Choice(name=c, value=c) for c in chain.from_iterable(row)]
+    cache: LRU[tuple[int, str], list[app_commands.Choice[str]]]
+    if itx.command:
+        extras = itx.command.extras
+        if "cache" not in itx.command.extras:
+            extras["cache"] = LRU(1024)
+
+        cache = extras["cache"]
+        # TODO: smarter trie based cache? is it worth it?
+        val = cache.get((itx.user.id, current), None)
+
+        if val is not None:
+            return val
+
+        cursor: apsw.Cursor = itx.client.conn.cursor()
+        # TODO: FTS index instead
+        row = cursor.execute(
+            """
+            SELECT tag_name FROM user_tags WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
+            """,
+            (itx.user.id, current),
+        )
+        cache[(itx.user.id, current)] = r = [app_commands.Choice(name=c, value=c) for c in chain.from_iterable(row)]
+        return r
+
+    return []

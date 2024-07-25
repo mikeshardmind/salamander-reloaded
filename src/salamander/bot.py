@@ -132,16 +132,6 @@ class Salamander(discord.AutoShardedClient):
                 fp.seek(0)
                 fp.write(tree_hash)
 
-    async def get_channel_for_user(self, user_id: int) -> discord.DMChannel:
-        """Might warrant a PR upstream for this given app commands"""
-        await self.wait_until_ready()
-        state = self._connection
-        channel = state._get_private_channel_by_user(user_id)  # pyright: ignore[reportPrivateUsage]
-        if channel is not None:
-            return channel
-        data = await state.http.start_private_message(user_id)
-        return state.add_dm_channel(data)
-
     async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         user_id = event.associated_user
         reminder = event.unpack_extra(Reminder)
@@ -149,7 +139,7 @@ class Salamander(discord.AutoShardedClient):
             embed = discord.Embed(description=reminder.content, title="Your requested reminder")
 
             try:
-                channel = await self.get_channel_for_user(user_id)
+                channel = await self.create_dm(discord.Object(user_id, type=discord.User))
                 await channel.send(embed=embed)
             except discord.HTTPException as exc:
                 logging.warning("Could not handle reminder %r due to exception", event, exc_info=exc)

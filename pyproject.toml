@@ -65,6 +65,7 @@ dependencies = [
     "platformdirs>=4.2.2",
     "apsw>=3.46.0.1",
     "async-utils @ git+https://github.com/mikeshardmind/async-utils",
+    "scheduler @ git+https://github.com/mikeshardmind/discord-scheduler",
 ]
 version = "0.1.0"
 

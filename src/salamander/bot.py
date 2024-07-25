@@ -19,6 +19,7 @@ import apsw
 import apsw.bestpractice
 import discord
 import msgspec
+import scheduler
 import xxhash
 
 from . import base2048
@@ -60,6 +61,8 @@ class Salamander(discord.AutoShardedClient):
         db_path = platformdir_stuff.user_data_path / "salamander.db"
         self.conn: apsw.Connection = apsw.Connection(str(db_path.resolve()))
         self.block_cache: LRU[int, bool] = LRU(512)
+        sched_path = platformdir_stuff.user_data_path / "scheduled.db"
+        self.sched: scheduler.DiscordBotScheduler = scheduler.DiscordBotScheduler(sched_path)
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
@@ -96,6 +99,11 @@ class Salamander(discord.AutoShardedClient):
         return b
 
     async def setup_hook(self) -> None:
+        from datetime import timedelta
+        t = discord.utils.utcnow() + timedelta(minutes=1)
+        fmt = t.strftime(r"%Y-%m-%d %H:%M")
+        await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
+        self.sched.start_dispatch_to_bot(self)
         self.tree.add_command(raw_content)
         self.tree.add_command(user_avatar)
         self.tree.add_command(get_note_ctx)
@@ -112,6 +120,8 @@ class Salamander(discord.AutoShardedClient):
                 fp.seek(0)
                 fp.write(tree_hash)
 
+    async def on_sinbad_scheduler_test(self, event: scheduler.ScheduledDispatch) -> None:
+        print(event)
 
 def _get_stored_token() -> str | None:
     token_file_path = platformdir_stuff.user_config_path / "salamander.token"

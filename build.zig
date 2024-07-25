@@ -11,13 +11,4 @@ pub fn build(b: *std.Build) void {
         .strip = true,
     });
     b.installArtifact(dice);
-
-    const aead = b.addSharedLibrary(.{
-        .name = "aead",
-        .root_source_file = b.path("aead.zig"),
-        .target = target,
-        .optimize = optimize,
-        .strip = true,
-    });
-    b.installArtifact(aead);
 }

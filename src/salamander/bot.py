@@ -116,12 +116,11 @@ class Salamander(discord.AutoShardedClient):
         fmt = t.strftime(r"%Y-%m-%d %H:%M")
         await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
         self.sched.start_dispatch_to_bot(self)
-        self.tree.add_command(raw_content)
-        self.tree.add_command(user_avatar)
-        self.tree.add_command(get_note_ctx)
-        self.tree.add_command(add_note_ctx)
-        self.tree.add_command(tag_group)
-        self.tree.add_command(dice_group)
+
+        commands_to_load = (raw_content, user_avatar, get_note_ctx, add_note_ctx, tag_group, dice_group)
+        for command in commands_to_load:
+            self.tree.add_command(command)
+
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)
         tree_hash = await self.tree.get_hash(self.tree)
@@ -138,13 +137,17 @@ class Salamander(discord.AutoShardedClient):
         if reminder and user_id:
             embed = discord.Embed(description=reminder.content, title="Your requested reminder")
 
+            unrecoverable_fail = False
             try:
                 channel = await self.create_dm(discord.Object(user_id, type=discord.User))
                 await channel.send(embed=embed)
+            except (discord.NotFound, discord.Forbidden):
+                # assume user doesn't exist or removed the app
+                unrecoverable_fail = True
             except discord.HTTPException as exc:
-                logging.warning("Could not handle reminder %r due to exception", event, exc_info=exc)
+                logging.exception("Could not handle reminder %r due to exception", event, exc_info=exc)
 
-            if reminder.recur:
+            if reminder.recur and not unrecoverable_fail:
                 delta = {
                     "Weekly": timedelta(weeks=1),
                     "Daily": timedelta(days=1),

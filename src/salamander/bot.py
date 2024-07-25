@@ -9,11 +9,14 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 import argparse
+import asyncio
 import getpass
+import logging
 import os
 import re
+from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import apsw
 import apsw.bestpractice
@@ -28,6 +31,13 @@ from .infotools import raw_content, user_avatar
 from .notes import add_note_ctx, get_note_ctx
 from .tags import tag_group
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
+
+log = logging.getLogger(__name__)
+
+
+class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
+    content: str
+    recur: Literal["Daily", "Weekly"] | None = None
 
 
 class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
@@ -50,7 +60,9 @@ class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
 
 
 class Salamander(discord.AutoShardedClient):
-    def __init__(self, *args: Any, intents: discord.Intents, **kwargs: Any) -> None:
+    def __init__(
+        self, *args: Any, intents: discord.Intents, sched: scheduler.DiscordBotScheduler, **kwargs: Any
+    ) -> None:
         super().__init__(*args, intents=intents, **kwargs)
         self.tree = VersionableTree(
             self,
@@ -61,8 +73,7 @@ class Salamander(discord.AutoShardedClient):
         db_path = platformdir_stuff.user_data_path / "salamander.db"
         self.conn: apsw.Connection = apsw.Connection(str(db_path.resolve()))
         self.block_cache: LRU[int, bool] = LRU(512)
-        sched_path = platformdir_stuff.user_data_path / "scheduled.db"
-        self.sched: scheduler.DiscordBotScheduler = scheduler.DiscordBotScheduler(sched_path)
+        self.sched: scheduler.DiscordBotScheduler = sched
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
@@ -100,6 +111,7 @@ class Salamander(discord.AutoShardedClient):
 
     async def setup_hook(self) -> None:
         from datetime import timedelta
+
         t = discord.utils.utcnow() + timedelta(minutes=1)
         fmt = t.strftime(r"%Y-%m-%d %H:%M")
         await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
@@ -120,8 +132,45 @@ class Salamander(discord.AutoShardedClient):
                 fp.seek(0)
                 fp.write(tree_hash)
 
-    async def on_sinbad_scheduler_test(self, event: scheduler.ScheduledDispatch) -> None:
-        print(event)
+    async def get_channel_for_user(self, user_id: int) -> discord.DMChannel:
+        """Might warrant a PR upstream for this given app commands"""
+        await self.wait_until_ready()
+        state = self._connection
+        channel = state._get_private_channel_by_user(user_id)  # pyright: ignore[reportPrivateUsage]
+        if channel is not None:
+            return channel
+        data = await state.http.start_private_message(user_id)
+        return state.add_dm_channel(data)
+
+    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
+        user_id = event.associated_user
+        reminder = event.unpack_extra(Reminder)
+        if reminder and user_id:
+            embed = discord.Embed(description=reminder.content, title="Your requested reminder")
+
+            try:
+                channel = await self.get_channel_for_user(user_id)
+                await channel.send(embed=embed)
+            except discord.HTTPException as exc:
+                logging.warning("Could not handle reminder %r due to exception", event, exc_info=exc)
+
+            if reminder.recur:
+                delta = {
+                    "Weekly": timedelta(weeks=1),
+                    "Daily": timedelta(days=1),
+                }[reminder.recur]
+
+                time = event.get_arrow_time() + delta
+
+                await self.sched.schedule_event(
+                    dispatch_name=event.dispatch_name,
+                    dispatch_time=time.strftime(r"%Y-%m-%d %H:%M"),
+                    dispatch_zone=event.dispatch_zone,
+                    guild_id=event.associated_guild,
+                    user_id=user_id,
+                    dispatch_extra=reminder,
+                )
+
 
 def _get_stored_token() -> str | None:
     token_file_path = platformdir_stuff.user_config_path / "salamander.token"
@@ -160,9 +209,16 @@ def run_setup() -> None:
 
 
 def run_bot() -> None:
-    token = _get_token()
-    client = Salamander(intents=discord.Intents.none())
-    client.run(token)
+    discord.utils.setup_logging()
+    asyncio.run(entrypoint())
+
+
+async def entrypoint() -> None:
+    sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
+    async with sched:
+        client = Salamander(intents=discord.Intents.none(), sched=sched)
+        async with client:
+            await client.start(_get_token())
 
 
 def ensure_schema() -> None:

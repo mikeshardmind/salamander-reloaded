@@ -112,10 +112,10 @@ files = [
 
 [[package]]
 name = "async-utils"
-version = "5.0.0"
+version = "5.0.1"
 requires_python = ">=3.11.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "ac666765107995ccc2a68a85d75e83efa0f72344"
+revision = "b8eb0d37d83c1ca11758fde43a5c46a433dd4461"
 summary = "Various async utilities"
 groups = ["default"]
 marker = "python_version == \"3.12\""
@@ -210,7 +210,7 @@ dependencies = [
     "Brotli",
     "aiodns>=1.1",
     "cchardet==2.1.7; python_version < \"3.10\"",
-    "discord-py @ git+https://github.com/mikeshardmind/discord.py@d23d9c73b9b237fbbf921da57bd518621c4a9ac7",
+    "discord-py @ git+https://github.com/mikeshardmind/discord.py@testing/msgspec",
     "msgspec>=0.18.6",
 ]
 
@@ -363,10 +363,10 @@ files = [
 
 [[package]]
 name = "scheduler"
-version = "2024.5.24"
-requires_python = ">=3.11"
+version = "2024.7.25"
+requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "49cc9d2755ded5befe92ace157dd20296b11ec55"
+revision = "47a63ef9fdbcf07a90e7557e635adc123a7129cb"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 marker = "python_version == \"3.12\""

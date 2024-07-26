@@ -239,7 +239,7 @@ def ensure_schema() -> None:
 def main() -> None:
     os.umask(0o077)
     apsw.bestpractice.apply(apsw.bestpractice.recommended)  # pyright: ignore[reportUnknownMemberType]
-    parser = argparse.ArgumentParser(description="A minimal configuration discord bot for role menus")
+    parser = argparse.ArgumentParser(description="Small suite of user installable tools")
     excl_setup = parser.add_mutually_exclusive_group()
     excl_setup.add_argument("--setup", action="store_true", default=False, help="Run interactive setup.", dest="isetup")
     excl_setup.add_argument(

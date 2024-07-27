@@ -42,23 +42,21 @@ class TagModal(discord.ui.Modal):
         self.tag_name: str = tag_name
 
     async def on_submit(self, interaction: discord.Interaction[Any]) -> None:
-        conn: apsw.Connection = interaction.client.conn
-        with conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO discord_users (user_id, last_interaction)
-                VALUES (:author_id, CURRENT_TIMESTAMP)
-                ON CONFLICT (user_id)
-                DO UPDATE SET last_interaction=excluded.last_interaction;
+        cursor: apsw.Cursor = interaction.client.conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO discord_users (user_id, last_interaction)
+            VALUES (:author_id, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id)
+            DO UPDATE SET last_interaction=excluded.last_interaction;
 
-                INSERT INTO user_tags (user_id, tag_name, content)
-                VALUES (:author_id, :tag_name, :content)
-                ON CONFLICT (user_id, tag_name)
-                DO UPDATE SET content=excluded.content;
-                """,
-                {"author_id": self.author_id, "tag_name": self.tag_name, "content": self.tag.value},
-            )
+            INSERT INTO user_tags (user_id, tag_name, content)
+            VALUES (:author_id, :tag_name, :content)
+            ON CONFLICT (user_id, tag_name)
+            DO UPDATE SET content=excluded.content;
+            """,
+            {"author_id": self.author_id, "tag_name": self.tag_name, "content": self.tag.value},
+        )
         await interaction.response.send_message("Tag saved", ephemeral=True)
 
 
@@ -90,17 +88,16 @@ async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands
 async def user_tag_del(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
     """Delete a tag."""
     conn: apsw.Connection = itx.client.conn
-    with conn:
-        cursor = conn.cursor()
-        row = cursor.execute(
-            """
-            DELETE FROM user_tags
-            WHERE author_id = ? AND tag_name = ?
-            RETURNING 1
-            """,
-            (itx.user.id, name),
-        ).fetchone()
-        msg = "Tag Deleted" if row else "No such tag"
+    cursor = conn.cursor()
+    row = cursor.execute(
+        """
+        DELETE FROM user_tags
+        WHERE user_id = ? AND tag_name = ?
+        RETURNING tag_name
+        """,
+        (itx.user.id, name),
+    ).fetchall()
+    msg = "Tag Deleted" if row else "No such tag"
     await itx.response.send_message(msg, ephemeral=True)
 
 

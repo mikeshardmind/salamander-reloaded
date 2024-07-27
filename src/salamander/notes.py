@@ -68,18 +68,16 @@ class NotesView(discord.ui.View):
         self.index: int = 0
         self.message: discord.Message | None = None
         self.last_followup: discord.Webhook | None = None
-        self.listmenu: list[tuple[str, str]] = []
-
-        with conn:
-            items: list[Any] = conn.execute(
+        self.listmenu: list[tuple[str, str]] = [
+            *conn.execute(
                 """
                 SELECT content, created_at FROM user_notes
                 WHERE author_id = ? AND target_id = ?
                 ORDER BY created_at ASC
                 """,
                 (self.user_id, self.target_id),
-            ).fetchall()
-            self.listmenu.extend(items)
+            )
+        ]
 
     def setup_by_current_index(self) -> discord.Embed:
         ln = len(self.listmenu)

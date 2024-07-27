@@ -61,7 +61,12 @@ class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
 
 class Salamander(discord.AutoShardedClient):
     def __init__(
-        self, *args: Any, intents: discord.Intents, sched: scheduler.DiscordBotScheduler, **kwargs: Any
+        self,
+        *args: Any,
+        intents: discord.Intents,
+        sched: scheduler.DiscordBotScheduler,
+        conn: apsw.Connection,
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, intents=intents, **kwargs)
         self.tree = VersionableTree(
@@ -70,8 +75,7 @@ class Salamander(discord.AutoShardedClient):
             allowed_contexts=discord.app_commands.AppCommandContext(dm_channel=True, guild=True, private_channel=True),
             allowed_installs=discord.app_commands.AppInstallationType(user=True, guild=False),
         )
-        db_path = platformdir_stuff.user_data_path / "salamander.db"
-        self.conn: apsw.Connection = apsw.Connection(str(db_path.resolve()))
+        self.conn: apsw.Connection = conn
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = sched
 
@@ -203,13 +207,21 @@ def run_setup() -> None:
 
 def run_bot() -> None:
     discord.utils.setup_logging()
-    asyncio.run(entrypoint())
+    db_path = platformdir_stuff.user_data_path / "salamander.db"
+    conn = apsw.Connection(str(db_path))
+    try:
+        asyncio.run(entrypoint(conn))
+    except KeyError:
+        pass
+
+    conn.pragma("analysis_limit", 400)
+    conn.pragma("optimize")
 
 
-async def entrypoint() -> None:
+async def entrypoint(conn: apsw.Connection) -> None:
     sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
     async with sched:
-        client = Salamander(intents=discord.Intents.none(), sched=sched)
+        client = Salamander(intents=discord.Intents.none(), sched=sched, conn=conn)
         async with client:
             await client.start(_get_token())
 

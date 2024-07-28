@@ -12,22 +12,57 @@ import operator
 import random
 import re
 from collections.abc import Callable, Generator
+from functools import lru_cache
 from typing import Any, Self, TypeVar
 
-from cffi import FFI
 
-ffi = FFI()
-ffi.cdef(
-    """
-    double ev_xdy_keep_best_n(unsigned x, unsigned y, unsigned n);
-    double ev_xdy_keep_worst_n(unsigned x, unsigned y, unsigned n);
-    """
-)
-dicemath: Any = ffi.dlopen("bin/dicemath")
+@lru_cache(128)
+def ncr(n: int, r: int) -> int:
+    if 0 <= r <= n:
+        ntok = 1
+        rtok = 1
+        r = ((n - r) * (n - r < n)) + (r * (not (n - r < n)))
+        for t in range(r):
+            ntok *= n - t
+            rtok *= t + 1
+        return ntok // rtok
+    return 0
 
 
-_ev_roll_dice_keep_best: Callable[[int, int, int], float] = dicemath.ev_xdy_keep_best_n
-_ev_roll_dice_keep_worst: Callable[[int, int, int], float] = dicemath.ev_xdy_keep_worst_n
+@lru_cache(256)
+def _inner_flattened_cdf_math(quant: int, sides: int, i: int, j: int) -> float:
+    x = (((sides - j) / sides) ** i) * ((j / sides) ** (quant - i))
+    y = (((sides - j + 1) / sides) ** i) * (((j - 1) / sides) ** (quant - i))
+    return ncr(quant, i) * (x - y)
+
+
+@lru_cache(128)
+def _ev_roll_dice_keep_best(quant: int, sides: int, keep: int) -> float:
+    outermost_sum = 0
+    for k in range(keep):
+        middle_sum = 0
+        for j in range(1, sides + 1):
+            inner_sum = 0
+            for i in range(k + 1):
+                inner_sum += _inner_flattened_cdf_math(quant, sides, i, j)
+            middle_sum += j * inner_sum
+        outermost_sum += middle_sum
+    return outermost_sum
+
+
+@lru_cache(128)
+def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
+    outermost_sum = 0
+    for k in range(1, keep + 1):
+        middle_sum = 0
+        for j in range(1, sides + 1):
+            inner_sum = 0
+            for i in range(quant - k + 1):
+                inner_sum += _inner_flattened_cdf_math(quant, sides, i, j)
+            middle_sum += j * inner_sum
+        outermost_sum += middle_sum
+    return outermost_sum
+
 
 __all__ = ["Expression", "DiceError"]
 

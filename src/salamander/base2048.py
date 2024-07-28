@@ -11,12 +11,24 @@ Copyright (C) 2023 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
+import zlib
 from collections import deque
 from collections.abc import Iterable
+from functools import lru_cache
 from io import StringIO
+from pathlib import Path
 
-from ._dec_table import dec as DEC_TABLE
-from ._enc_table import enc as ENC_TABLE
+import msgspec
+
+
+@lru_cache
+def load_data() -> tuple[list[int], list[str]]:
+    """Load packed and compressed decoding/encoding tables"""
+    with Path(__file__).with_name("b2048.zlib").open(mode="rb") as fp:
+        data = fp.read()
+        decomp = zlib.decompress(data, wbits=-15)
+    return msgspec.msgpack.decode(decomp, type=tuple[list[int], list[str]])
+
 
 
 class Peekable[T]:
@@ -47,14 +59,14 @@ class Peekable[T]:
 
 TAIL = ("།", "༎", "༏", "༐", "༑", "༆", "༈", "༒")
 
-ZERO_SET = {idx for idx, value in enumerate(DEC_TABLE) if value == 0xFFFF}
+ZERO_SET = {idx for idx, value in enumerate(load_data()[0]) if value == 0xFFFF}
 
 
 class DecodeError(Exception):
     pass
 
 
-def encode(bys: bytes, /) -> str:
+def encode(bys: bytes, /, _ENC_TABLE: list[str]=load_data()[1]) -> str: # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
     ret = StringIO()
     stage = 0
     remaining = 0
@@ -64,20 +76,20 @@ def encode(bys: bytes, /) -> str:
         if need < 8:
             remaining = 8 - need
             index = (stage << need) | (byte >> remaining)
-            ret.write(ENC_TABLE[index])
+            ret.write(_ENC_TABLE[index])
             stage = byte & ((1 << remaining) - 1)
         else:
             stage = (stage << 8) | byte
             remaining += 8
 
     if remaining > 0:
-        ret.write(TAIL[stage] if remaining <= 3 else ENC_TABLE[stage])
+        ret.write(TAIL[stage] if remaining <= 3 else _ENC_TABLE[stage])
 
     ret.seek(0)
     return ret.read()
 
 
-def decode(string: str) -> bytes:
+def decode(string: str, /, _DEC_TABLE: list[int]=load_data()[0]) -> bytes:  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
     ret: list[int] = []
     remaining = 0
     stage = 0
@@ -114,7 +126,7 @@ def decode(string: str) -> bytes:
                     msg = f"Invalid tail character {i}: [{c}]"
                     raise DecodeError(msg)
         else:
-            new_bits = DEC_TABLE[numeric]
+            new_bits = _DEC_TABLE[numeric]
             n_new_bits = 11 if chars.has_more() else 11 - residue
 
         remaining += n_new_bits

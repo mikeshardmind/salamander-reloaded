@@ -30,7 +30,6 @@ def load_data() -> tuple[list[int], list[str]]:
     return msgspec.msgpack.decode(decomp, type=tuple[list[int], list[str]])
 
 
-
 class Peekable[T]:
     def __init__(self, iterable: Iterable[T]):
         self._it = iter(iterable)
@@ -66,7 +65,7 @@ class DecodeError(Exception):
     pass
 
 
-def encode(bys: bytes, /, _ENC_TABLE: list[str]=load_data()[1]) -> str: # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
+def encode(bys: bytes, /, _ENC_TABLE: list[str] = load_data()[1]) -> str:  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
     ret = StringIO()
     stage = 0
     remaining = 0
@@ -89,7 +88,7 @@ def encode(bys: bytes, /, _ENC_TABLE: list[str]=load_data()[1]) -> str: # noqa: 
     return ret.read()
 
 
-def decode(string: str, /, _DEC_TABLE: list[int]=load_data()[0]) -> bytes:  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
+def decode(string: str, /, _DEC_TABLE: list[int] = load_data()[0]) -> bytes:  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
     ret: list[int] = []
     remaining = 0
     stage = 0

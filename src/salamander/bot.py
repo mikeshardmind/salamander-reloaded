@@ -140,7 +140,6 @@ class Salamander(discord.AutoShardedClient):
                 fp.seek(0)
                 fp.write(tree_hash)
 
-
     async def close(self) -> None:
         await self.sched.stop_gracefully()
         return await super().close()
@@ -214,17 +213,27 @@ def run_setup() -> None:
         raise RuntimeError(msg)
     _store_token(token)
 
+
 @contextmanager
 def with_logging() -> Generator[None]:
     q: queue.SimpleQueue[Any] = queue.SimpleQueue()
     q_handler = logging.handlers.QueueHandler(q)
     stream_h = logging.StreamHandler()
+
+    log_path = platformdir_stuff.user_log_path / "salamander.log"
+
+    rotating_file_handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=2_000_000, backupCount=5)
+
     # intentional, discord.py won't use the stream coloring if passed the queue handler
     discord.utils.setup_logging(handler=stream_h)
-    q_listener = logging.handlers.QueueListener(q, stream_h)
+    discord.utils.setup_logging(handler=rotating_file_handler)
 
     root_logger = logging.getLogger()
     root_logger.removeHandler(stream_h)
+    root_logger.removeHandler(rotating_file_handler)
+
+    # add the queue listener for this
+    q_listener = logging.handlers.QueueListener(q, stream_h, rotating_file_handler)
     root_logger.addHandler(q_handler)
 
     try:

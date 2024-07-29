@@ -21,6 +21,7 @@ ignore = [
     "ANN202", # implied return fine sometimes
     "ANN204",  # special method return types
     "ANN401",  # Any return
+    "PLR0912", # too many branches
     "PLR0913", # number of function arguments
     "UP007", # "Use | For Union" doesn't account for typevar tuple unpacking.
     "COM812", # ruff format suggested

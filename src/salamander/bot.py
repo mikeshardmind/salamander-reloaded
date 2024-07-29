@@ -12,9 +12,13 @@ import argparse
 import asyncio
 import getpass
 import logging
+import logging.handlers
 import os
+import queue
 import re
 import signal
+from collections.abc import Generator
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal
@@ -210,17 +214,38 @@ def run_setup() -> None:
         raise RuntimeError(msg)
     _store_token(token)
 
+@contextmanager
+def with_logging() -> Generator[None]:
+    q: queue.SimpleQueue[Any] = queue.SimpleQueue()
+    q_handler = logging.handlers.QueueHandler(q)
+    stream_h = logging.StreamHandler()
+    # intentional, discord.py won't use the stream coloring if passed the queue handler
+    discord.utils.setup_logging(handler=stream_h)
+    q_listener = logging.handlers.QueueListener(q, stream_h)
+
+    root_logger = logging.getLogger()
+    root_logger.removeHandler(stream_h)
+    root_logger.addHandler(q_handler)
+
+    try:
+        q_listener.start()
+        yield
+    finally:
+        q_listener.stop()
+
 
 def run_bot() -> None:
-    discord.utils.setup_logging()
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
-    loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+    try:
+        loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
+        loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+    except NotImplementedError:
+        pass
     loop.set_task_factory(asyncio.eager_task_factory)
 
     def stop_when_done(fut: asyncio.Future[None]):
@@ -334,8 +359,9 @@ def main() -> None:
     elif args.token:
         _store_token(args.token)
     else:
-        ensure_schema()
-        run_bot()
+        with with_logging():
+            ensure_schema()
+            run_bot()
 
 
 if __name__ == "__main__":

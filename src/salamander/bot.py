@@ -14,6 +14,7 @@ import getpass
 import logging
 import os
 import re
+import signal
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal
@@ -135,6 +136,11 @@ class Salamander(discord.AutoShardedClient):
                 fp.seek(0)
                 fp.write(tree_hash)
 
+
+    async def close(self) -> None:
+        await self.sched.stop_gracefully()
+        return await super().close()
+
     async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         user_id = event.associated_user
         reminder = event.unpack_extra(Reminder)
@@ -209,10 +215,67 @@ def run_bot() -> None:
     discord.utils.setup_logging()
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
+    loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+    loop.set_task_factory(asyncio.eager_task_factory)
+
+    def stop_when_done(fut: asyncio.Future[None]):
+        loop.stop()
+
+    fut = asyncio.ensure_future(entrypoint(conn), loop=loop)
     try:
-        asyncio.run(entrypoint(conn))
-    except KeyError:
-        pass
+        fut.add_done_callback(stop_when_done)
+        loop.run_forever()
+    except KeyboardInterrupt:
+        log.warning("Shutting down via keyboard interrupt is inadvisable.")
+    finally:
+        fut.remove_done_callback(stop_when_done)
+        # Below is implementation details with asyncio
+        loop.run_until_complete(asyncio.sleep(0.05))
+        tasks: set[asyncio.Task[Any]] = {t for t in asyncio.all_tasks(loop) if not t.done()}
+        for t in tasks:
+            t.cancel()
+
+        async def limited_finalization():
+            _done, pending = await asyncio.wait(tasks, timeout=1)
+            if not pending:
+                log.debug("Clean shutdown accomplished.")
+                return
+
+            for task in pending:
+                name = task.get_name()
+                coro = task.get_coro()
+                log.warning("Task %s wrapping coro %r did not exit properly", name, coro)
+
+        loop.run_until_complete(limited_finalization())
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.run_until_complete(loop.shutdown_default_executor())
+
+        for task in tasks:
+            try:
+                if (exc := task.exception()) is not None:
+                    loop.call_exception_handler(
+                        {
+                            "message": "Unhandled exception in task during shutdown.",
+                            "exception": task.exception(),
+                            "task": exc,
+                        }
+                    )
+            except (asyncio.InvalidStateError, asyncio.CancelledError):
+                pass
+
+        asyncio.set_event_loop(None)
+        loop.close()
+
+        if not fut.cancelled():
+            try:
+                fut.result()
+            except KeyboardInterrupt:
+                pass
 
     conn.pragma("analysis_limit", 400)
     conn.pragma("optimize")
@@ -222,8 +285,12 @@ async def entrypoint(conn: apsw.Connection) -> None:
     sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
     async with sched:
         client = Salamander(intents=discord.Intents.none(), sched=sched, conn=conn)
-        async with client:
-            await client.start(_get_token())
+        try:
+            async with client:
+                await client.start(_get_token())
+        finally:
+            if not client.is_closed():
+                await client.close()
 
 
 def ensure_schema() -> None:

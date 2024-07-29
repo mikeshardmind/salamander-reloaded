@@ -15,7 +15,7 @@
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = 'wal';
-PRAGMA synchronous = NORMAL;
+PRAGMA synchronous = 'NORMAL';
 
 
 CREATE TABLE IF NOT EXISTS discord_users (

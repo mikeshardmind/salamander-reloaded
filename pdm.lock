@@ -248,10 +248,10 @@ files = [
 
 [[package]]
 name = "scheduler"
-version = "2024.7.25"
+version = "2024.7.28"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "47a63ef9fdbcf07a90e7557e635adc123a7129cb"
+revision = "064987ebd14b5c3e2e74ffac3147e3de929cee4e"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 marker = "python_version == \"3.12\""

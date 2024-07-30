@@ -23,6 +23,7 @@ ignore = [
     "ANN401",  # Any return
     "PLR0912", # too many branches
     "PLR0913", # number of function arguments
+    "PLR0915",  # too many statements.... in an async entrypoint handling graceful shutdown...
     "UP007", # "Use | For Union" doesn't account for typevar tuple unpacking.
     "COM812", # ruff format suggested
     "ISC001", # ruff format suggested

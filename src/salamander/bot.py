@@ -64,12 +64,14 @@ class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
         return xxhash.xxh64_digest(msgspec.msgpack.encode(payload), seed=0)
 
 
+
+_missing: Any = object()
+
 class Salamander(discord.AutoShardedClient):
     def __init__(
         self,
         *args: Any,
         intents: discord.Intents,
-        sched: scheduler.DiscordBotScheduler,
         conn: apsw.Connection,
         **kwargs: Any,
     ) -> None:
@@ -82,7 +84,7 @@ class Salamander(discord.AutoShardedClient):
         )
         self.conn: apsw.Connection = conn
         self.block_cache: LRU[int, bool] = LRU(512)
-        self.sched: scheduler.DiscordBotScheduler = sched
+        self.sched: scheduler.DiscordBotScheduler = _missing
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
@@ -139,6 +141,17 @@ class Salamander(discord.AutoShardedClient):
                 await self.tree.sync()
                 fp.seek(0)
                 fp.write(tree_hash)
+
+    async def start(
+        self, token: str, *, reconnect: bool = True,
+        scheduler: scheduler.DiscordBotScheduler = _missing,
+    ) -> None:
+        if scheduler is _missing:
+            msg = "Must provide a valid scheudler instance"
+            raise RuntimeError(msg)
+        self.sched = scheduler
+        return await super().start(token, reconnect=reconnect)
+
 
     async def close(self) -> None:
         await self.sched.stop_gracefully()
@@ -220,9 +233,9 @@ def with_logging() -> Generator[None]:
     q_handler = logging.handlers.QueueHandler(q)
     stream_h = logging.StreamHandler()
 
-    log_path = platformdir_stuff.user_log_path / "salamander.log"
-
-    rotating_file_handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=2_000_000, backupCount=5)
+    log_path = resolve_path_with_links(platformdir_stuff.user_log_path, folder=True)
+    log_loc = log_path / "salamander.log"
+    rotating_file_handler = logging.handlers.RotatingFileHandler(log_loc, maxBytes=2_000_000, backupCount=5)
 
     # intentional, discord.py won't use the stream coloring if passed the queue handler
     discord.utils.setup_logging(handler=stream_h)
@@ -249,6 +262,17 @@ def run_bot() -> None:
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    client = Salamander(intents=discord.Intents.none(), conn=conn)
+
+    async def entrypoint() -> None:
+        sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
+        async with sched:
+            try:
+                async with client:
+                    await client.start(_get_token(), scheduler=sched)
+            finally:
+                if not client.is_closed():
+                    await client.close()
 
     try:
         loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
@@ -260,25 +284,31 @@ def run_bot() -> None:
     def stop_when_done(fut: asyncio.Future[None]):
         loop.stop()
 
-    fut = asyncio.ensure_future(entrypoint(conn), loop=loop)
+    fut = asyncio.ensure_future(entrypoint(), loop=loop)
     try:
         fut.add_done_callback(stop_when_done)
         loop.run_forever()
     except KeyboardInterrupt:
-        log.warning("Shutting down via keyboard interrupt is inadvisable.")
+        log.info("Shutting down via keyboard interrupt.")
     finally:
         fut.remove_done_callback(stop_when_done)
-        # Below is implementation details with asyncio
-        loop.run_until_complete(asyncio.sleep(0.05))
+        if not client.is_closed():
+            # give the client a brief opportunity to close
+            _close_task = loop.create_task(client.close())  # noqa: RUF006
+        loop.run_until_complete(asyncio.sleep(0.001))
+
         tasks: set[asyncio.Task[Any]] = {t for t in asyncio.all_tasks(loop) if not t.done()}
-        for t in tasks:
-            t.cancel()
 
         async def limited_finalization():
-            _done, pending = await asyncio.wait(tasks, timeout=1)
+            _done, pending = await asyncio.wait(tasks, timeout=0.1)
             if not pending:
                 log.debug("Clean shutdown accomplished.")
                 return
+
+            for task in tasks:
+                task.cancel()
+
+            _done, pending = await asyncio.wait(tasks, timeout=0.1)
 
             for task in pending:
                 name = task.get_name()
@@ -313,18 +343,6 @@ def run_bot() -> None:
 
     conn.pragma("analysis_limit", 400)
     conn.pragma("optimize")
-
-
-async def entrypoint(conn: apsw.Connection) -> None:
-    sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
-    async with sched:
-        client = Salamander(intents=discord.Intents.none(), sched=sched, conn=conn)
-        try:
-            async with client:
-                await client.start(_get_token())
-        finally:
-            if not client.is_closed():
-                await client.close()
 
 
 def ensure_schema() -> None:

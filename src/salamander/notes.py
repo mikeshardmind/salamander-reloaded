@@ -125,7 +125,10 @@ class NotesView(discord.ui.View):
         self.message = await itx.followup.send(embed=element, view=self, ephemeral=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.id == self.user_id
+        if interaction.user.id == self.user_id:
+            return True
+        await interaction.response.defer(ephemeral=True)
+        return False
 
     async def edit_to_current_index(self, interaction: discord.Interaction) -> None:
         element = self.setup_by_current_index()

@@ -48,7 +48,11 @@ class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
 class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
     async def interaction_check(self, interaction: discord.Interaction[Salamander]) -> bool:
         if interaction.client.is_blocked(interaction.user.id):
-            await interaction.response.send_message("Nope.", ephemeral=True)
+            if interaction.type is discord.InteractionType.application_command:
+                # We're not allowed to defer without thinking and ghost them, thanks discord! /s
+                await interaction.response.send_message("blocked, go away", ephemeral=True)
+            else:
+                await interaction.response.defer(ephemeral=True)
             return False
         return True
 

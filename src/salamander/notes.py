@@ -13,7 +13,10 @@ from typing import Any
 
 import apsw
 import discord
+import msgspec
 from discord import app_commands
+
+from .base2048 import decode, encode
 
 
 class NoteModal(discord.ui.Modal):
@@ -28,20 +31,35 @@ class NoteModal(discord.ui.Modal):
         self,
         *,
         title: str = "Add note",
-        timeout: float | None = 300,
+        timeout: float | None = None,
         custom_id: str = "",
-        conn: apsw.Connection,
         target_id: int,
         author_id: int,
     ) -> None:
-        super().__init__(title=title, timeout=timeout)
-        self.conn: apsw.Connection = conn
-        self.author_id = author_id
-        self.target_id = target_id
 
-    async def on_submit(self, interaction: discord.Interaction[Any]) -> None:
-        with self.conn:
-            cursor = self.conn.cursor()
+        data = msgspec.msgpack.encode((author_id, target_id))
+        disc_safe = encode(data)
+        custom_id = f"m:note:{disc_safe}"
+        super().__init__(title=title, timeout=10, custom_id=custom_id)
+
+    @staticmethod
+    async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
+
+        packed = decode(data)
+        author_id, target_id = msgspec.msgpack.decode(packed)
+        assert interaction.data
+
+        raw_ = interaction.data.get("components", None)
+        if not raw_:
+            return
+        comp = raw_[0]
+        modal_components = comp.get("components")
+        if not modal_components:
+            return
+        content = modal_components[0]["value"]
+
+        with conn:
+            cursor = conn.cursor()
             cursor.execute(
                 """
                 INSERT INTO discord_users (user_id, last_interaction) VALUES (:author_id, CURRENT_TIMESTAMP)
@@ -51,9 +69,9 @@ class NoteModal(discord.ui.Modal):
                 INSERT INTO user_notes (author_id, target_id, content) VALUES (:author_id, :target_id, :content);
                 """,
                 {
-                    "author_id": self.author_id,
-                    "target_id": self.target_id,
-                    "content": self.note.value,
+                    "author_id": author_id,
+                    "target_id": target_id,
+                    "content": content,
                 },
             )
         await interaction.response.send_message("Note saved", ephemeral=True)
@@ -153,7 +171,8 @@ class NotesView(discord.ui.View):
 
 @app_commands.context_menu(name="Add note")
 async def add_note_ctx(itx: discord.Interaction[Any], user: discord.Member | discord.User) -> None:
-    await itx.response.send_modal(NoteModal(conn=itx.client.conn, target_id=user.id, author_id=itx.user.id))
+    modal = NoteModal(target_id=user.id, author_id=itx.user.id)
+    await itx.response.send_modal(modal)
 
 
 @app_commands.context_menu(name="Get notes")

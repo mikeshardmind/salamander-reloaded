@@ -21,7 +21,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 import apsw
 import apsw.bestpractice
@@ -33,7 +33,7 @@ import xxhash
 from . import base2048
 from .dice import dice_group
 from .infotools import raw_content, user_avatar
-from .notes import add_note_ctx, get_note_ctx
+from .notes import NoteModal, add_note_ctx, get_note_ctx
 from .tags import tag_group
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
@@ -65,6 +65,8 @@ class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
 
 
 
+modal_regex = re.compile(r"^m:(.{1,10}):(.*)$", flags=re.DOTALL)
+
 _missing: Any = object()
 
 class Salamander(discord.AutoShardedClient):
@@ -85,6 +87,15 @@ class Salamander(discord.AutoShardedClient):
         self.conn: apsw.Connection = conn
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = _missing
+
+    async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
+        if interaction.type is discord.InteractionType.modal_submit:
+            assert interaction.data is not None
+            custom_id = interaction.data.get("custom_id", "")
+            if match := modal_regex.match(custom_id):
+                modal_name, data = match.groups()
+                if modal_name == "note":
+                    await NoteModal.raw_submit(interaction, self.conn, data)
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked

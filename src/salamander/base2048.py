@@ -11,6 +11,7 @@ Copyright (C) 2023 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
+import struct
 import zlib
 from collections import deque
 from collections.abc import Iterable
@@ -18,16 +19,20 @@ from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 
-import msgspec
-
 
 @lru_cache
-def load_data() -> tuple[list[int], list[str]]:
+def load_data() -> tuple[tuple[int, ...], tuple[str, ...]]:
     """Load packed and compressed decoding/encoding tables"""
     with Path(__file__).with_name("b2048.zlib").open(mode="rb") as fp:
         data = fp.read()
-        decomp = zlib.decompress(data, wbits=-15)
-    return msgspec.msgpack.decode(decomp, type=tuple[list[int], list[str]])
+    decomp = zlib.decompress(data, wbits=-15)
+
+    dec_fmt = "!4340H"
+    dec_items: tuple[int, ...] = struct.unpack_from(dec_fmt, decomp, 0)
+    _temp_enc: tuple[int, ...] = struct.unpack_from("!2048H", decomp, struct.calcsize(dec_fmt))
+    enc_items: tuple[str, ...] = tuple(map(chr, _temp_enc))
+
+    return dec_items, enc_items
 
 
 _DEC_TABLE, _ENC_TABLE = load_data()

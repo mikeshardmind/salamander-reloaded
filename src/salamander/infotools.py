@@ -12,6 +12,8 @@ import io
 
 import discord
 
+from ._type_stuff import BotExports
+
 
 def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
     em = discord.Embed()
@@ -43,3 +45,6 @@ async def raw_content(itx: discord.Interaction, message: discord.Message) -> Non
 
     b = io.BytesIO(c.encode())
     await itx.response.send_message(content="Attached long raw content", ephemeral=True, file=discord.File(b))
+
+
+exports = BotExports([user_avatar, raw_content])

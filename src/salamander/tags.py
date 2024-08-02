@@ -13,8 +13,11 @@ from typing import Any
 
 import apsw
 import discord
+import msgspec
 from discord import app_commands
 
+from ._type_stuff import BotExports
+from .base2048 import decode, encode
 from .utils import LRU
 
 tag_group = app_commands.Group(name="tag", description="Store and recall content")
@@ -37,12 +40,28 @@ class TagModal(discord.ui.Modal):
         tag_name: str,
         author_id: int,
     ) -> None:
-        super().__init__(title=title, timeout=timeout)
-        self.author_id = author_id
-        self.tag_name: str = tag_name
+        data = msgspec.msgpack.encode((author_id, tag_name))
+        disc_safe = encode(data)
+        custom_id = f"m:tag:{disc_safe}"
+        super().__init__(title=title, timeout=10, custom_id=custom_id)
 
-    async def on_submit(self, interaction: discord.Interaction[Any]) -> None:
+    @staticmethod
+    async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
         cursor: apsw.Cursor = interaction.client.conn.cursor()
+        packed = decode(data)
+        author_id, tag_name = msgspec.msgpack.decode(packed, type=tuple[int, str])
+
+        assert interaction.data
+
+        raw_ = interaction.data.get("components", None)
+        if not raw_:
+            return
+        comp = raw_[0]
+        modal_components = comp.get("components")
+        if not modal_components:
+            return
+        content = modal_components[0]["value"]
+
         cursor.execute(
             """
             INSERT INTO discord_users (user_id, last_interaction)
@@ -55,7 +74,7 @@ class TagModal(discord.ui.Modal):
             ON CONFLICT (user_id, tag_name)
             DO UPDATE SET content=excluded.content;
             """,
-            {"author_id": self.author_id, "tag_name": self.tag_name, "content": self.tag.value},
+            {"author_id": author_id, "tag_name": tag_name, "content": content},
         )
         await interaction.response.send_message("Tag saved", ephemeral=True)
 
@@ -126,3 +145,6 @@ async def tag_autocomplete(
     )
     _cache[(itx.user.id, current)] = r = [app_commands.Choice(name=c, value=c) for c in chain.from_iterable(row)]
     return r
+
+
+exports = BotExports([tag_group], {"tag": TagModal})

@@ -6,7 +6,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Copyright (C) 2023 Michael Hall <https://github.com/mikeshardmind>
 """
 
-# This is a pure python re-implementation of https://github.com/ionite34/base2048
+# This is a python re-implementation of https://github.com/ionite34/base2048
 # which is available under the MIT License here: https://github.com/ionite34/base2048/blob/main/LICENSE
 
 from __future__ import annotations
@@ -28,6 +28,9 @@ def load_data() -> tuple[list[int], list[str]]:
         data = fp.read()
         decomp = zlib.decompress(data, wbits=-15)
     return msgspec.msgpack.decode(decomp, type=tuple[list[int], list[str]])
+
+
+_DEC_TABLE, _ENC_TABLE = load_data()
 
 
 class Peekable[T]:
@@ -65,7 +68,7 @@ class DecodeError(Exception):
     pass
 
 
-def encode(bys: bytes, /, _ENC_TABLE: list[str] = load_data()[1]) -> str:  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
+def encode(bys: bytes, /) -> str:
     ret = StringIO()
     stage = 0
     remaining = 0
@@ -88,7 +91,7 @@ def encode(bys: bytes, /, _ENC_TABLE: list[str] = load_data()[1]) -> str:  # noq
     return ret.read()
 
 
-def decode(string: str, /, _DEC_TABLE: list[int] = load_data()[0]) -> bytes:  # noqa: B008  # pyright: ignore[reportCallInDefaultInitializer]
+def decode(string: str, /) -> bytes:
     ret: list[int] = []
     remaining = 0
     stage = 0

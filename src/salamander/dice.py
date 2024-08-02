@@ -11,6 +11,7 @@ from __future__ import annotations
 import discord
 from discord import app_commands
 
+from ._type_stuff import BotExports
 from .dicemath import DiceError, Expression
 
 dice_group = app_commands.Group(name="dice", description="Keep rolling")
@@ -54,3 +55,6 @@ async def rverb(
         f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}",
         ephemeral=secret,
     )
+
+
+exports = BotExports([dice_group])

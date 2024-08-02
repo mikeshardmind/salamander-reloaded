@@ -16,6 +16,7 @@ import discord
 import msgspec
 from discord import app_commands
 
+from ._type_stuff import BotExports
 from .base2048 import decode, encode
 
 
@@ -36,7 +37,6 @@ class NoteModal(discord.ui.Modal):
         target_id: int,
         author_id: int,
     ) -> None:
-
         data = msgspec.msgpack.encode((author_id, target_id))
         disc_safe = encode(data)
         custom_id = f"m:note:{disc_safe}"
@@ -44,9 +44,8 @@ class NoteModal(discord.ui.Modal):
 
     @staticmethod
     async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
-
         packed = decode(data)
-        author_id, target_id = msgspec.msgpack.decode(packed)
+        author_id, target_id = msgspec.msgpack.decode(packed, type=tuple[int, int])
         assert interaction.data
 
         raw_ = interaction.data.get("components", None)
@@ -182,3 +181,6 @@ async def add_note_ctx(itx: discord.Interaction[Any], user: discord.Member | dis
 async def get_note_ctx(itx: discord.Interaction[Any], user: discord.Member | discord.User) -> None:
     menu = NotesView(itx.user.id, user.id, conn=itx.client.conn)
     await menu.start(itx)
+
+
+exports = BotExports([add_note_ctx, get_note_ctx], {"note": NoteModal})

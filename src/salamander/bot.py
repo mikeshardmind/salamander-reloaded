@@ -30,11 +30,8 @@ import msgspec
 import scheduler
 import xxhash
 
-from . import base2048
-from .dice import dice_group
-from .infotools import raw_content, user_avatar
-from .notes import NoteModal, add_note_ctx, get_note_ctx
-from .tags import tag_group
+from . import base2048, dice, infotools, notes, tags
+from ._type_stuff import RawSubmittable
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
 log = logging.getLogger(__name__)
@@ -68,10 +65,10 @@ class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
         return xxhash.xxh64_digest(msgspec.msgpack.encode(payload), seed=0)
 
 
-
 modal_regex = re.compile(r"^m:(.{1,10}):(.*)$", flags=re.DOTALL)
 
 _missing: Any = object()
+
 
 class Salamander(discord.AutoShardedClient):
     def __init__(
@@ -82,6 +79,7 @@ class Salamander(discord.AutoShardedClient):
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, intents=intents, **kwargs)
+        self.raw_submits: dict[str, RawSubmittable] = {}
         self.tree = VersionableTree(
             self,
             fallback_to_global=False,
@@ -98,8 +96,8 @@ class Salamander(discord.AutoShardedClient):
             custom_id = interaction.data.get("custom_id", "")
             if match := modal_regex.match(custom_id):
                 modal_name, data = match.groups()
-                if modal_name == "note":
-                    await NoteModal.raw_submit(interaction, self.conn, data)
+                if rs := self.raw_submits.get(modal_name):
+                    await rs.raw_submit(interaction, self.conn, data)
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
@@ -143,9 +141,13 @@ class Salamander(discord.AutoShardedClient):
         await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
         self.sched.start_dispatch_to_bot(self)
 
-        commands_to_load = (raw_content, user_avatar, get_note_ctx, add_note_ctx, tag_group, dice_group)
-        for command in commands_to_load:
-            self.tree.add_command(command)
+        for mod in (dice, infotools, notes, tags):
+            exports = mod.exports
+            if exports.commands:
+                for command_obj in exports.commands:
+                    self.tree.add_command(command_obj)
+            if exports.raw_submits:
+                self.raw_submits.update(exports.raw_submits)
 
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)
@@ -158,7 +160,10 @@ class Salamander(discord.AutoShardedClient):
                 fp.write(tree_hash)
 
     async def start(
-        self, token: str, *, reconnect: bool = True,
+        self,
+        token: str,
+        *,
+        reconnect: bool = True,
         scheduler: scheduler.DiscordBotScheduler = _missing,
     ) -> None:
         if scheduler is _missing:
@@ -166,7 +171,6 @@ class Salamander(discord.AutoShardedClient):
             raise RuntimeError(msg)
         self.sched = scheduler
         return await super().start(token, reconnect=reconnect)
-
 
     async def close(self) -> None:
         await self.sched.stop_gracefully()

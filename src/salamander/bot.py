@@ -93,21 +93,17 @@ class Salamander(discord.AutoShardedClient):
         self.sched: scheduler.DiscordBotScheduler = _missing
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
-        if interaction.type is discord.InteractionType.modal_submit:
-            assert interaction.data is not None
-            custom_id = interaction.data.get("custom_id", "")
-            if match := modal_regex.match(custom_id):
-                modal_name, data = match.groups()
-                if rs := self.raw_modal_submits.get(modal_name):
-                    await rs.raw_submit(interaction, self.conn, data)
-        elif interaction.type is discord.InteractionType.component:
-            assert interaction.data is not None
-            custom_id = interaction.data.get("custom_id", "")
-            if match := button_regex.match(custom_id):
-                button_name, data = match.groups()
-                log.warning(data)
-                if bs := self.raw_button_submits.get(button_name):
-                    await bs.raw_submit(interaction, self.conn, data)
+        for typ, regex, mapping in (
+            (discord.InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
+            (discord.InteractionType.component, button_regex, self.raw_button_submits),
+        ):
+            if interaction.type is typ:
+                assert interaction.data is not None
+                custom_id = interaction.data.get("custom_id", "")
+                if match := regex.match(custom_id):
+                    modal_name, data = match.groups()
+                    if rs := mapping.get(modal_name):
+                        await rs.raw_submit(interaction, self.conn, data)
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked

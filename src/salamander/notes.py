@@ -18,6 +18,9 @@ from discord import app_commands
 
 from ._type_stuff import BotExports
 from .base2048 import decode, encode
+from .utils import LRU
+
+_user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
 
 
 class NoteModal(discord.ui.Modal):
@@ -74,101 +77,104 @@ class NoteModal(discord.ui.Modal):
                 },
             )
         await interaction.response.send_message("Note saved", ephemeral=True)
+        _user_notes_lru.remove((author_id, target_id))
 
 
-class NotesView(discord.ui.View):
-    def __init__(self, user_id: int, target_id: int, *, timeout: float = 180, conn: apsw.Connection):
-        super().__init__(timeout=timeout)
-        self.user_id = user_id
-        self.target_id = target_id
-        self.conn = conn
-        self.index: int = 0
-        self.message: discord.Message | None = None
-        self.last_followup: discord.Webhook | None = None
-        self.listmenu: list[tuple[str, str]] = [
-            *conn.execute(
-                """
-                SELECT content, created_at FROM user_notes
-                WHERE author_id = ? AND target_id = ?
-                ORDER BY created_at ASC
-                """,
-                (self.user_id, self.target_id),
-            )
-        ]
+def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple[str, ...]:
+    if nl := _user_notes_lru.get((author_id, user_id), None):
+        return nl
 
-    def setup_by_current_index(self) -> discord.Embed:
-        ln = len(self.listmenu)
-        index = self.index % ln
-        self.previous.disabled = self.jump_first.disabled = bool(index == 0)
-        self.nxt.disabled = self.jump_last.disabled = bool(index == ln - 1)
-        content, ts = self.listmenu[index]
+    _user_notes_lru[(author_id, user_id)] = r = tuple(
+        conn.execute(
+            """
+            SELECT content, created_at FROM user_notes
+            WHERE author_id = ? AND target_id = ?
+            ORDER BY created_at ASC
+            """,
+            (author_id, user_id),
+        )
+    )
+    return r
+
+
+class DynButton(discord.ui.Button[discord.ui.View]):
+    async def callback(self, interaction: discord.Interaction[Any]) -> Any:
+        pass
+
+
+class NotesView:
+    @staticmethod
+    def index_setup(items: tuple[str, ...], index: int) -> tuple[discord.Embed, bool, bool, str]:
+        ln = len(items)
+        index %= ln
+        content, ts = items[index]
         dt = datetime.fromisoformat(ts)
-        return discord.Embed(description=content, timestamp=dt)
+        return discord.Embed(description=content, timestamp=dt), index == 0, index == ln - 1, ts
 
-    async def close(self) -> None:
-        if self.last_followup and self.message:
-            await self.last_followup.delete_message(self.message.id)
+    @classmethod
+    async def start(cls, itx: discord.Interaction[Any], conn: apsw.Connection, user_id: int, target_id: int) -> None:
+        await cls.edit_to_current_index(itx, conn, user_id, target_id, 0, first=True)
 
-    async def on_timeout(self) -> None:
-        await self.close()
+    @classmethod
+    async def edit_to_current_index(
+        cls,
+        itx: discord.Interaction,
+        conn: apsw.Connection,
+        user_id: int,
+        target_id: int,
+        index: int,
+        first: bool = False,
+    ) -> None:
+        _l = get_user_notes(conn, user_id, target_id)
 
-    async def start(self, itx: discord.Interaction[Any]) -> None:
-        # TODO: type this to allow using followup here as well
-        if not self.listmenu:
-            await itx.response.defer(ephemeral=True)
-            await itx.followup.send("You have no saved notes for this user.")
+        if not _l:
+            if first:
+                await itx.response.send_message("You have no saved notes for this user.", ephemeral=True)
+            else:
+                await itx.response.edit_message(content="You no longer have any saved noted for this user.", view=None)
             return
-        element = self.setup_by_current_index()
-        await itx.response.defer(ephemeral=True)
-        self.last_followup = itx.followup
-        self.message = await itx.followup.send(embed=element, view=self, ephemeral=True)
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id == self.user_id:
-            return True
-        await interaction.response.defer(ephemeral=True)
-        return False
+        element, first_disabled, last_disabled, ts = cls.index_setup(_l, index)
+        pack = msgspec.msgpack.encode
+        v = discord.ui.View(timeout=10)
 
-    async def edit_to_current_index(self, interaction: discord.Interaction) -> None:
-        element = self.setup_by_current_index()
-        await interaction.response.edit_message(embed=element, view=self)
-        self.last_followup = interaction.followup
+        c_id = "b:note:" + encode(pack(("first", user_id, target_id, 0, ts)))
+        v.add_item(DynButton(label="<<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=first_disabled))
+        c_id = "b:note:" + encode(pack(("previous", user_id, target_id, index - 1, ts)))
+        v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id))
+        c_id = "b:note:" + encode(pack(("delete", user_id, target_id, index, ts)))
+        v.add_item(
+            DynButton(emoji="\N{WASTEBASKET}\N{VARIATION SELECTOR-16}", style=discord.ButtonStyle.red, custom_id=c_id)
+        )
+        c_id = "b:note:" + encode(pack(("next", user_id, target_id, index + 1, ts)))
+        v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id))
+        c_id = "b:note:" + encode(pack(("last", user_id, target_id, len(_l) - 1, ts)))
+        v.add_item(DynButton(label=">>", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=last_disabled))
 
-    @discord.ui.button(label="<<", style=discord.ButtonStyle.gray)
-    async def jump_first(self, interaction: discord.Interaction, button: discord.ui.Button[Any]) -> None:
-        self.index = 0
-        await self.edit_to_current_index(interaction)
+        if first:
+            await itx.response.send_message(embed=element, view=v, ephemeral=True)
+        else:
+            await itx.response.edit_message(embed=element, view=v)
 
-    @discord.ui.button(label="<", style=discord.ButtonStyle.gray)
-    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button[Any]) -> None:
-        self.index -= 1
-        await self.edit_to_current_index(interaction)
+    @classmethod
+    async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
+        action, user_id, target_id, idx, ts = msgspec.msgpack.decode(decode(data), type=tuple[str, int, int, int, str])
+        if interaction.user.id != user_id:
+            return
 
-    @discord.ui.button(emoji="\N{WASTEBASKET}\N{VARIATION SELECTOR-16}", style=discord.ButtonStyle.red)
-    async def delete(self, interaction: discord.Interaction, button: discord.ui.Button[Any]) -> None:
-        await interaction.response.defer(ephemeral=True)
-        self.last_followup = interaction.followup
-        with self.conn:
-            cursor = self.conn.cursor()
-            current_ts = self.listmenu[self.index][1]
-            cursor.execute(
-                """
-                DELETE FROM user_notes
-                WHERE author_id = ? AND target_id = ? AND created_at = ?
-                """,
-                (self.user_id, self.target_id, current_ts),
-            )
-        await self.close()
+        if action == "delete":
+            _user_notes_lru.remove((user_id, target_id))
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    DELETE FROM user_notes
+                    WHERE author_id = ? AND target_id = ? AND created_at = ?
+                    """,
+                    (user_id, target_id, ts),
+                )
 
-    @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
-    async def nxt(self, interaction: discord.Interaction, button: discord.ui.Button[Any]) -> None:
-        self.index += 1
-        await self.edit_to_current_index(interaction)
-
-    @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
-    async def jump_last(self, interaction: discord.Interaction, button: discord.ui.Button[Any]) -> None:
-        self.index = -1
-        await self.edit_to_current_index(interaction)
+        await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx)
 
 
 @app_commands.context_menu(name="Add note")
@@ -179,8 +185,8 @@ async def add_note_ctx(itx: discord.Interaction[Any], user: discord.Member | dis
 
 @app_commands.context_menu(name="Get notes")
 async def get_note_ctx(itx: discord.Interaction[Any], user: discord.Member | discord.User) -> None:
-    menu = NotesView(itx.user.id, user.id, conn=itx.client.conn)
-    await menu.start(itx)
+    menu = NotesView()
+    await menu.start(itx, itx.client.conn, itx.user.id, user.id)
 
 
-exports = BotExports([add_note_ctx, get_note_ctx], {"note": NoteModal})
+exports = BotExports([add_note_ctx, get_note_ctx], {"note": NoteModal}, {"note": NotesView})

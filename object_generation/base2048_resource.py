@@ -25,6 +25,3 @@ def write_data() -> None:
     compressed = zlib.compress(packed, level=9, wbits=-15)
     with Path(__file__).with_name("b2048.zlib").open(mode="wb") as fp:
         fp.write(compressed)
-
-
-

@@ -66,6 +66,7 @@ class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
 
 
 modal_regex = re.compile(r"^m:(.{1,10}):(.*)$", flags=re.DOTALL)
+button_regex = re.compile(r"^b:(.{1,10}):(.*)$", flags=re.DOTALL)
 
 _missing: Any = object()
 
@@ -79,7 +80,8 @@ class Salamander(discord.AutoShardedClient):
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, intents=intents, **kwargs)
-        self.raw_submits: dict[str, RawSubmittable] = {}
+        self.raw_modal_submits: dict[str, RawSubmittable] = {}
+        self.raw_button_submits: dict[str, RawSubmittable] = {}
         self.tree = VersionableTree(
             self,
             fallback_to_global=False,
@@ -96,8 +98,16 @@ class Salamander(discord.AutoShardedClient):
             custom_id = interaction.data.get("custom_id", "")
             if match := modal_regex.match(custom_id):
                 modal_name, data = match.groups()
-                if rs := self.raw_submits.get(modal_name):
+                if rs := self.raw_modal_submits.get(modal_name):
                     await rs.raw_submit(interaction, self.conn, data)
+        elif interaction.type is discord.InteractionType.component:
+            assert interaction.data is not None
+            custom_id = interaction.data.get("custom_id", "")
+            if match := button_regex.match(custom_id):
+                button_name, data = match.groups()
+                log.warning(data)
+                if bs := self.raw_button_submits.get(button_name):
+                    await bs.raw_submit(interaction, self.conn, data)
 
     def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
@@ -146,8 +156,10 @@ class Salamander(discord.AutoShardedClient):
             if exports.commands:
                 for command_obj in exports.commands:
                     self.tree.add_command(command_obj)
-            if exports.raw_submits:
-                self.raw_submits.update(exports.raw_submits)
+            if exports.raw_modal_submits:
+                self.raw_modal_submits.update(exports.raw_modal_submits)
+            if exports.raw_button_submits:
+                self.raw_button_submits.update(exports.raw_button_submits)
 
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)

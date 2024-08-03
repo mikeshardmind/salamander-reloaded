@@ -31,9 +31,17 @@ class DeleteMemberDataFunc(Protocol):
     def __call__(self, conn: apsw.Connection, guild_id: int, user_id: int, /) -> Coroutine[Any, Any, Any]: ...
 
 
-class RawSubmittable(Protocol):
+class RawSubmittableCls(Protocol):
+    @classmethod
+    async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None: ...
+
+
+class RawSubmittableStatic(Protocol):
     @staticmethod
     async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None: ...
+
+
+type RawSubmittable = RawSubmittableCls | RawSubmittableStatic
 
 
 class BotExports(NamedTuple):
@@ -43,7 +51,8 @@ class BotExports(NamedTuple):
         ]
         | None
     ) = None
-    raw_submits: dict[str, type[RawSubmittable]] | None = None
+    raw_modal_submits: dict[str, type[RawSubmittable]] | None = None
+    raw_button_submits: dict[str, type[RawSubmittable]] | None = None
     delete_all_data_func: DeleteAllDataFunc | None = None
     delete_user_data_func: DeleteUserDataFunc | None = None
     delete_guild_data_func: DeleteGuildDataFunc | None = None

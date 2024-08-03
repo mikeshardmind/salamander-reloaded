@@ -18,6 +18,7 @@ ignore = [
     "SIM105",  # supressable exception, I'm not paying the overhead of contextlib.supress for stylistic choices.
     "C90",  # mccabe complexity memes
     "ANN101", # missing "Self" annotation, self is implicit
+    "ANN102", # missing "type[Self]" annotation, also implicit
     "ANN202", # implied return fine sometimes
     "ANN204",  # special method return types
     "ANN401",  # Any return

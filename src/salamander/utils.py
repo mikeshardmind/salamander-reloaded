@@ -40,6 +40,9 @@ class LRU(Generic[K, V]):
         if len(self.cache) > self.maxsize:
             self.cache.pop(next(iter(self.cache)))
 
+    def remove(self, key: K) -> None:
+        self.cache.pop(key, None)
+
 
 def resolve_path_with_links(path: Path, folder: bool = False) -> Path:
     """

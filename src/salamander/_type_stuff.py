@@ -13,6 +13,7 @@ from typing import Any, NamedTuple, Protocol
 
 import apsw
 import discord
+from discord import app_commands
 
 
 class DeleteAllDataFunc(Protocol):
@@ -42,15 +43,10 @@ class RawSubmittableStatic(Protocol):
 
 
 type RawSubmittable = RawSubmittableCls | RawSubmittableStatic
-
+type AppCommandTypes = app_commands.Group | app_commands.Command[Any, Any, Any] | app_commands.ContextMenu
 
 class BotExports(NamedTuple):
-    commands: (
-        list[
-            discord.app_commands.Group | discord.app_commands.Command[Any, Any, Any] | discord.app_commands.ContextMenu
-        ]
-        | None
-    ) = None
+    commands: list[AppCommandTypes] | None = None
     raw_modal_submits: dict[str, type[RawSubmittable]] | None = None
     raw_button_submits: dict[str, type[RawSubmittable]] | None = None
     delete_all_data_func: DeleteAllDataFunc | None = None

@@ -147,7 +147,9 @@ class NotesView:
             if first:
                 await itx.response.send_message("You have no saved notes for this user.", ephemeral=True)
             else:
-                await itx.response.edit_message(content="You no longer have any saved noted for this user.", view=None)
+                await itx.response.edit_message(
+                    content="You no longer have any saved noted for this user.", view=None, embed=None
+                )
             return
 
         element, first_disabled, last_disabled, ts = cls.index_setup(_l, index)

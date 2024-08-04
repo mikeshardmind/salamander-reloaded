@@ -378,7 +378,6 @@ def ensure_schema() -> None:
 
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
-    cursor = conn.cursor()
 
     schema_location = (Path(__file__)).with_name("schema.sql")
     with schema_location.open(mode="r") as f:
@@ -386,17 +385,27 @@ def ensure_schema() -> None:
         for line in f.readlines():
             text = line.strip()
             # This isn't naive escaping, it's removing comments in a trusted file
-            if text and not text.startswith("--"):
+            if not text.startswith("--"):
                 to_execute.append(text)
 
-    # And this is just splitting statements at semicolons without removing the semicolons
-    for match in re.finditer(r"[^;]+;", " ".join(to_execute)):
-        cursor.execute(match.group(0))
+    iterator = iter(to_execute)
+    for line in iterator:
+        s = [line]
+        while n := next(iterator, None):
+            s.append(n)
+        statement = "\n".join(s)
+        list(conn.execute(statement))
 
 
 def main() -> None:
     os.umask(0o077)
-    apsw.bestpractice.apply(apsw.bestpractice.recommended)  # pyright: ignore[reportUnknownMemberType]
+    to_apply: tuple[Any, ...] = (
+        apsw.bestpractice.connection_wal,
+        apsw.bestpractice.connection_busy_timeout,
+        apsw.bestpractice.connection_enable_foreign_keys,
+        apsw.bestpractice.connection_dqs,
+    )
+    apsw.bestpractice.apply(to_apply)  # pyright: ignore[reportUnknownMemberType]
     parser = argparse.ArgumentParser(description="Small suite of user installable tools")
     excl_setup = parser.add_mutually_exclusive_group()
     excl_setup.add_argument("--setup", action="store_true", default=False, help="Run interactive setup.", dest="isetup")

@@ -45,6 +45,7 @@ class RawSubmittableStatic(Protocol):
 type RawSubmittable = RawSubmittableCls | RawSubmittableStatic
 type AppCommandTypes = app_commands.Group | app_commands.Command[Any, Any, Any] | app_commands.ContextMenu
 
+
 class BotExports(NamedTuple):
     commands: list[AppCommandTypes] | None = None
     raw_modal_submits: dict[str, type[RawSubmittable]] | None = None

@@ -22,6 +22,8 @@ from .utils import LRU
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
 
+TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
+
 
 class NoteModal(discord.ui.Modal):
     note: discord.ui.TextInput[NoteModal] = discord.ui.TextInput(
@@ -62,22 +64,36 @@ class NoteModal(discord.ui.Modal):
 
         with conn:
             cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO discord_users (user_id, last_interaction) VALUES (:author_id, CURRENT_TIMESTAMP)
-                ON CONFLICT (user_id)
-                DO UPDATE SET last_interaction=excluded.last_interaction;
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO discord_users (user_id, last_interaction)
+                    VALUES (:author_id, CURRENT_TIMESTAMP)
+                    ON CONFLICT (user_id)
+                    DO UPDATE SET last_interaction=excluded.last_interaction;
 
-                INSERT INTO user_notes (author_id, target_id, content) VALUES (:author_id, :target_id, :content);
-                """,
-                {
-                    "author_id": author_id,
-                    "target_id": target_id,
-                    "content": content,
-                },
+                    INSERT INTO user_notes (author_id, target_id, content)
+                    VALUES (:author_id, :target_id, :content);
+                    """,
+                    {
+                        "author_id": author_id,
+                        "target_id": target_id,
+                        "content": content,
+                    },
+                )
+            except apsw.ConstraintError:
+                too_many = True
+            else:
+                too_many = False
+
+        if not too_many:
+            await interaction.response.send_message("Note saved", ephemeral=True)
+            _user_notes_lru.remove((author_id, target_id))
+        else:
+            await interaction.response.send_message(
+                "You have 25 notes for this user already, clean some up before making more",
+                ephemeral=True,
             )
-        await interaction.response.send_message("Note saved", ephemeral=True)
-        _user_notes_lru.remove((author_id, target_id))
 
 
 def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple[str, ...]:
@@ -143,9 +159,7 @@ class NotesView:
         c_id = "b:note:" + encode(pack(("previous", user_id, target_id, index - 1, ts)))
         v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id))
         c_id = "b:note:" + encode(pack(("delete", user_id, target_id, index, ts)))
-        v.add_item(
-            DynButton(emoji="\N{WASTEBASKET}\N{VARIATION SELECTOR-16}", style=discord.ButtonStyle.red, custom_id=c_id)
-        )
+        v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
         c_id = "b:note:" + encode(pack(("next", user_id, target_id, index + 1, ts)))
         v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id))
         c_id = "b:note:" + encode(pack(("last", user_id, target_id, len(_l) - 1, ts)))

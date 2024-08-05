@@ -30,7 +30,7 @@ import msgspec
 import scheduler
 import xxhash
 
-from . import base2048, dice, infotools, notes, tags
+from . import base2048, dice, infotools, notes, settings_commands, tags
 from ._type_stuff import RawSubmittable
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
@@ -147,7 +147,7 @@ class Salamander(discord.AutoShardedClient):
         await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
         self.sched.start_dispatch_to_bot(self)
 
-        for mod in (dice, infotools, notes, tags):
+        for mod in (dice, infotools, notes, settings_commands, tags):
             exports = mod.exports
             if exports.commands:
                 for command_obj in exports.commands:

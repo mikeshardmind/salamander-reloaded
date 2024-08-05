@@ -13,6 +13,7 @@ from typing import Any
 import discord
 import pytz
 
+from ._type_stuff import BotExports
 from .utils import LRU
 
 settings_group = discord.app_commands.Group(name="settings", description="configure settings here")
@@ -60,3 +61,6 @@ def closest_zones(current: str) -> list[str]:
 @tz_set.autocomplete("zone")
 async def zone_ac(itx: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=x, value=x) for x in closest_zones(current)]
+
+
+exports = BotExports(commands=[settings_group])

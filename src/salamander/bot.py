@@ -342,7 +342,8 @@ def run_bot() -> None:
                 coro = task.get_coro()
                 log.warning("Task %s wrapping coro %r did not exit properly", name, coro)
 
-        loop.run_until_complete(limited_finalization())
+        if tasks:
+            loop.run_until_complete(limited_finalization())
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.run_until_complete(loop.shutdown_default_executor())
 

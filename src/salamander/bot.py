@@ -21,7 +21,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import Any, Self
 
 import apsw
 import apsw.bestpractice
@@ -31,15 +31,10 @@ import scheduler
 import xxhash
 
 from . import base2048, dice, infotools, notes, settings_commands, tags
-from ._type_stuff import RawSubmittable
+from ._type_stuff import RawSubmittable, Reminder
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
 log = logging.getLogger(__name__)
-
-
-class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
-    content: str
-    recur: Literal["Daily", "Weekly"] | None = None
 
 
 class VersionableTree(discord.app_commands.CommandTree["Salamander"]):

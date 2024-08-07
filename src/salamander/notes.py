@@ -8,7 +8,7 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 import apsw
@@ -16,9 +16,9 @@ import discord
 import msgspec
 from discord import app_commands
 
-from ._type_stuff import BotExports
-from .base2048 import decode, encode
-from .utils import LRU
+from ._type_stuff import BotExports, DynButton
+from .base2048 import decode
+from .utils import LRU, b2048pack
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
 
@@ -42,8 +42,7 @@ class NoteModal(discord.ui.Modal):
         target_id: int,
         author_id: int,
     ) -> None:
-        data = msgspec.msgpack.encode((author_id, target_id))
-        disc_safe = encode(data)
+        disc_safe = b2048pack((author_id, target_id))
         custom_id = f"m:note:{disc_safe}"
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
@@ -113,11 +112,6 @@ def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple
     return r
 
 
-class DynButton(discord.ui.Button[discord.ui.View]):
-    async def callback(self, interaction: discord.Interaction[Any]) -> Any:
-        pass
-
-
 class NotesView:
     @staticmethod
     def index_setup(items: tuple[str, ...], index: int) -> tuple[discord.Embed, bool, bool, str]:
@@ -153,18 +147,18 @@ class NotesView:
             return
 
         element, first_disabled, last_disabled, ts = cls.index_setup(_l, index)
-        pack = msgspec.msgpack.encode
+
         v = discord.ui.View(timeout=10)
 
-        c_id = "b:note:" + encode(pack(("first", user_id, target_id, 0, ts)))
+        c_id = "b:note:" + b2048pack(("first", user_id, target_id, 0, ts))
         v.add_item(DynButton(label="<<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=first_disabled))
-        c_id = "b:note:" + encode(pack(("previous", user_id, target_id, index - 1, ts)))
+        c_id = "b:note:" + b2048pack(("previous", user_id, target_id, index - 1, ts))
         v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id))
-        c_id = "b:note:" + encode(pack(("delete", user_id, target_id, index, ts)))
+        c_id = "b:note:" + b2048pack(("delete", user_id, target_id, index, ts))
         v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
-        c_id = "b:note:" + encode(pack(("next", user_id, target_id, index + 1, ts)))
+        c_id = "b:note:" + b2048pack(("next", user_id, target_id, index + 1, ts))
         v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id))
-        c_id = "b:note:" + encode(pack(("last", user_id, target_id, len(_l) - 1, ts)))
+        c_id = "b:note:" + b2048pack(("last", user_id, target_id, len(_l) - 1, ts))
         v.add_item(DynButton(label=">>", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=last_disabled))
 
         if first:

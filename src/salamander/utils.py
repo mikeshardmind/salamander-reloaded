@@ -11,13 +11,24 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Generic, TypeVar
 
+import msgspec
 import platformdirs
+
+from .base2048 import decode, encode
 
 platformdir_stuff = platformdirs.PlatformDirs("salamander", "mikeshardmind", roaming=False)
 
 K = TypeVar("K")
 V = TypeVar("V")
 T = TypeVar("T")
+
+
+def b2048pack(obj: object, /) -> str:
+    return encode(msgspec.msgpack.encode(obj))
+
+
+def b2048unpack(packed: str, typ: type[T], /) -> T:
+    return msgspec.msgpack.decode(decode(packed), type=typ)
 
 
 class LRU(Generic[K, V]):

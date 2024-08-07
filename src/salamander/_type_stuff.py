@@ -9,11 +9,22 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 from collections.abc import Coroutine
-from typing import Any, NamedTuple, Protocol
+from typing import Any, Literal, NamedTuple, Protocol
 
 import apsw
 import discord
+import msgspec
 from discord import app_commands
+
+
+class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
+    content: str
+    recur: Literal["Daily", "Weekly"] | None = None
+
+
+class DynButton(discord.ui.Button[discord.ui.View]):
+    async def callback(self, interaction: discord.Interaction[Any]) -> Any:
+        pass
 
 
 class DeleteAllDataFunc(Protocol):

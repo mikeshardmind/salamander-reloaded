@@ -17,8 +17,8 @@ import msgspec
 from discord import app_commands
 
 from ._type_stuff import BotExports
-from .base2048 import decode, encode
-from .utils import LRU
+from .base2048 import decode
+from .utils import LRU, b2048pack
 
 tag_group = app_commands.Group(name="tag", description="Store and recall content")
 
@@ -40,8 +40,7 @@ class TagModal(discord.ui.Modal):
         tag_name: str,
         author_id: int,
     ) -> None:
-        data = msgspec.msgpack.encode((author_id, tag_name))
-        disc_safe = encode(data)
+        disc_safe = b2048pack((author_id, tag_name))
         custom_id = f"m:tag:{disc_safe}"
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 

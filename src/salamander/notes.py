@@ -8,7 +8,7 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any
 
 import apsw
@@ -124,7 +124,7 @@ class NotesView:
         ln = len(items)
         index %= ln
         content, ts = items[index]
-        dt = datetime.fromisoformat(ts)
+        dt = datetime.fromisoformat(ts).replace(tzinfo=UTC)
         return discord.Embed(description=content, timestamp=dt), index == 0, index == ln - 1, ts
 
     @classmethod

@@ -61,6 +61,7 @@ class TagModal(discord.ui.Modal):
             return
         content = modal_components[0]["value"]
 
+        await interaction.response.defer(ephemeral=True)
         cursor.execute(
             """
             INSERT INTO discord_users (user_id, last_interaction)
@@ -75,7 +76,7 @@ class TagModal(discord.ui.Modal):
             """,
             {"author_id": author_id, "tag_name": tag_name, "content": content},
         )
-        await interaction.response.send_message("Tag saved", ephemeral=True)
+        await interaction.followup.send(content="Tag saved", ephemeral=True)
 
 
 @tag_group.command(name="create")
@@ -105,6 +106,7 @@ async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands
 @tag_group.command(name="delete")
 async def user_tag_del(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
     """Delete a tag."""
+    await itx.response.defer(ephemeral=True)
     conn: apsw.Connection = itx.client.conn
     cursor = conn.cursor()
     row = cursor.execute(
@@ -116,7 +118,7 @@ async def user_tag_del(itx: discord.Interaction[Any], name: discord.app_commands
         (itx.user.id, name),
     ).fetchall()
     msg = "Tag Deleted" if row else "No such tag"
-    await itx.response.send_message(msg, ephemeral=True)
+    await itx.followup.send(msg, ephemeral=True)
 
 
 _cache: LRU[tuple[int, str], list[app_commands.Choice[str]]] = LRU(1024)

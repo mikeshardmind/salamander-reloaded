@@ -61,6 +61,8 @@ class NoteModal(discord.ui.Modal):
             return
         content = modal_components[0]["value"]
 
+        await interaction.response.defer(ephemeral=True)
+
         with conn:
             cursor = conn.cursor()
             try:
@@ -86,10 +88,10 @@ class NoteModal(discord.ui.Modal):
                 too_many = False
 
         if not too_many:
-            await interaction.response.send_message("Note saved", ephemeral=True)
+            await interaction.followup.send("Note saved", ephemeral=True)
             _user_notes_lru.remove((author_id, target_id))
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "You have 25 notes for this user already, clean some up before making more",
                 ephemeral=True,
             )
@@ -114,12 +116,15 @@ def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple
 
 class NotesView:
     @staticmethod
-    def index_setup(items: tuple[str, ...], index: int) -> tuple[discord.Embed, bool, bool, str]:
+    def index_setup(items: tuple[str, ...], index: int) -> tuple[discord.Embed, bool, bool, bool, str]:
         ln = len(items)
         index %= ln
         content, ts = items[index]
         dt = datetime.fromisoformat(ts).replace(tzinfo=UTC)
-        return discord.Embed(description=content, timestamp=dt), index == 0, index == ln - 1, ts
+        first_disabled = index == 0
+        last_disabled = index == ln - 1
+        prev_next_disabled = ln == 1
+        return discord.Embed(description=content, timestamp=dt), first_disabled, last_disabled, prev_next_disabled, ts
 
     @classmethod
     async def start(cls, itx: discord.Interaction[Any], conn: apsw.Connection, user_id: int, target_id: int) -> None:
@@ -134,37 +139,39 @@ class NotesView:
         target_id: int,
         index: int,
         first: bool = False,
+        use_followup: bool = False,
     ) -> None:
         _l = get_user_notes(conn, user_id, target_id)
 
+        send = itx.followup.send if use_followup else itx.response.send_message
+        edit = itx.edit_original_response if use_followup else itx.response.edit_message
+
         if not _l:
             if first:
-                await itx.response.send_message("You have no saved notes for this user.", ephemeral=True)
+                await send("You have no saved notes for this user.", ephemeral=True)
             else:
-                await itx.response.edit_message(
-                    content="You no longer have any saved noted for this user.", view=None, embed=None
-                )
+                await edit(content="You no longer have any saved noted for this user.", view=None, embed=None)
             return
 
-        element, first_disabled, last_disabled, ts = cls.index_setup(_l, index)
+        element, first_disabled, last_disabled, prev_next_disabled, ts = cls.index_setup(_l, index)
 
-        v = discord.ui.View(timeout=10)
+        v = discord.ui.View(timeout=4)
 
         c_id = "b:note:" + b2048pack(("first", user_id, target_id, 0, ts))
         v.add_item(DynButton(label="<<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=first_disabled))
         c_id = "b:note:" + b2048pack(("previous", user_id, target_id, index - 1, ts))
-        v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id))
+        v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=prev_next_disabled))
         c_id = "b:note:" + b2048pack(("delete", user_id, target_id, index, ts))
         v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
         c_id = "b:note:" + b2048pack(("next", user_id, target_id, index + 1, ts))
-        v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id))
+        v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=prev_next_disabled))
         c_id = "b:note:" + b2048pack(("last", user_id, target_id, len(_l) - 1, ts))
         v.add_item(DynButton(label=">>", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=last_disabled))
 
         if first:
-            await itx.response.send_message(embed=element, view=v, ephemeral=True)
+            await send(embed=element, view=v, ephemeral=True)
         else:
-            await itx.response.edit_message(embed=element, view=v)
+            await edit(embed=element, view=v)
 
     @classmethod
     async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
@@ -172,6 +179,7 @@ class NotesView:
         if interaction.user.id != user_id:
             return
 
+        await interaction.response.defer(ephemeral=True)
         if action == "delete":
             _user_notes_lru.remove((user_id, target_id))
             with conn:
@@ -184,7 +192,7 @@ class NotesView:
                     (user_id, target_id, ts),
                 )
 
-        await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx)
+        await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx, use_followup=True)
 
 
 @app_commands.context_menu(name="Add note")

@@ -31,6 +31,7 @@ async def tz_set(itx: discord.Interaction[Any], zone: discord.app_commands.Range
     else:
         conn = itx.client.conn
         cursor = conn.cursor()
+        await itx.response.defer(ephemeral=True)
         cursor.execute(
             """
             INSERT INTO discord_users (user_id, user_tz) VALUES(?, ?)
@@ -38,7 +39,7 @@ async def tz_set(itx: discord.Interaction[Any], zone: discord.app_commands.Range
             """,
             (itx.user.id, zone),
         )
-        await itx.response.send_message("Timezone set to %s" % zone, ephemeral=True)
+        await itx.followup.send("Timezone set to %s" % zone, ephemeral=True)
 
 
 _close_zone_cache: LRU[str, list[str]] = LRU(512)

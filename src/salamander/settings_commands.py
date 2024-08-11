@@ -36,7 +36,7 @@ def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
         INSERT INTO discord_users (user_id)
         VALUES (?)
         ON CONFLICT (user_id)
-        DO UPDATE SET user_tz=excluded.user_tz
+        DO UPDATE SET user_tz=user_tz
         RETURNING user_tz
         """,
         (user_id,),

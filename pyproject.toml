@@ -69,7 +69,7 @@ dependencies = [
     "async-utils @ git+https://github.com/mikeshardmind/async-utils",
     "scheduler @ git+https://github.com/mikeshardmind/discord-scheduler",
     "msgspec>=0.18.6",
-    "discord-py @ git+https://github.com/mikeshardmind/discord.py@testing/msgspec",
+    "discord-py[speed] @ git+https://github.com/mikeshardmind/discord.py@salamander-reloaded",
     "pytz>=2024.1",
 ]
 version = "0.1.0"

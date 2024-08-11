@@ -8,14 +8,17 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Any
 
 import apsw
 import discord
+import pytz
 from scheduler import DiscordBotScheduler, ScheduledDispatch
 
 from ._type_stuff import BotExports, DynButton, Reminder
-from .utils import LRU, b2048pack, b2048unpack
+from .settings_commands import get_user_tz
+from .utils import b2048pack, b2048unpack
 
 reminder_group = discord.app_commands.Group(name="remindme", description="remind yourself about something, later")
 
@@ -98,19 +101,49 @@ class ReminderView:
         await cls.edit_to_current_index(interaction, user_id, idx, use_followup=True)
 
 
-_user_tz_lru: LRU[int, str] = LRU(128)
-
-
 @reminder_group.command(name="in", description="remind in an amount of time")
-async def remind_in(itx: discord.Interaction[Any]) -> None: ...
+async def remind_in(
+    itx: discord.Interaction[Any],
+    days: discord.app_commands.Range[int, 0, 365] = 0,
+    hours: discord.app_commands.Range[int, 0, 72] = 0,
+    minutes: discord.app_commands.Range[int, 0, 59] = 0,
+    content: discord.app_commands.Range[str, 1, 1000] = "",
+) -> None:
+    sched: DiscordBotScheduler = itx.client.sched
+    await itx.response.defer(ephemeral=True)
+    # strategy here is based on a mix of factors
+    raw_tz = get_user_tz(itx.client.conn, itx.user.id)
+    user_tz = pytz.timezone(raw_tz)
+    now = datetime.now(user_tz)
+    when = now + timedelta(days=days, hours=hours, minutes=minutes)
+    if days:
+        # we assume normalizing hours to match the clock for DST transitions here.
+        # TODO: document reminder behavior
+        when = user_tz.normalize(when)
+
+    ts = DiscordBotScheduler.time_str_from_params(when.year, when.month, when.day, when.hour, when.minute)
+    reminder = Reminder(content=content, recur=None)
+    await sched.schedule_event(
+        dispatch_name="reminder",
+        dispatch_zone=raw_tz,
+        user_id=itx.user.id,
+        dispatch_extra=reminder,
+        dispatch_time=ts,
+    )
+
+    formatted_ts = discord.utils.format_dt(when, style="f")
+    await itx.followup.send(f"Reminder scheduled for {formatted_ts}", ephemeral=True)
 
 
-@reminder_group.command(name="at", description="remind at a specific time (uses your configured timezone)")
-async def remind_at(itx: discord.Interaction[Any]) -> None: ...
+# @reminder_group.command(name="at", description="remind at a specific time (uses your configured timezone)")
+async def remind_at(itx: discord.Interaction[Any]) -> None:
+    ...
+    # TODO: time parser
 
 
 @reminder_group.command(name="list", description="view and optionally remove your reminders.")
-async def reminder_list(itx: discord.Interaction[Any]) -> None: ...
+async def reminder_list(itx: discord.Interaction[Any]) -> None:
+    await ReminderView.start(itx, itx.user.id)
 
 
 exports = BotExports([reminder_group], raw_button_submits={"rmndrlst": ReminderView})

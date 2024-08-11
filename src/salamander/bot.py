@@ -30,7 +30,7 @@ import msgspec
 import scheduler
 import xxhash
 
-from . import base2048, dice, infotools, notes, settings_commands, tags
+from . import base2048, dice, infotools, notes, reminders, settings_commands, tags
 from ._type_stuff import RawSubmittable, Reminder
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
@@ -142,7 +142,7 @@ class Salamander(discord.AutoShardedClient):
         await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
         self.sched.start_dispatch_to_bot(self)
 
-        for mod in (dice, infotools, notes, settings_commands, tags):
+        for mod in (dice, infotools, notes, reminders, settings_commands, tags):
             exports = mod.exports
             if exports.commands:
                 for command_obj in exports.commands:
@@ -249,10 +249,21 @@ def run_setup() -> None:
     _store_token(token)
 
 
+class KnownWarningFilter(logging.Filter):
+    known_messages = (
+        "Guilds intent seems to be disabled. This may cause state related issues.",
+        "PyNaCl is not installed, voice will NOT be supported",
+    )
+
+    def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
+        return record.msg not in self.known_messages
+
+
 @contextmanager
 def with_logging() -> Generator[None]:
     q: queue.SimpleQueue[Any] = queue.SimpleQueue()
     q_handler = logging.handlers.QueueHandler(q)
+    q_handler.addFilter(KnownWarningFilter())
     stream_h = logging.StreamHandler()
 
     log_path = resolve_path_with_links(platformdir_stuff.user_log_path, folder=True)

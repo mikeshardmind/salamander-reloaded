@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import apsw
 import discord
 import pytz
 
@@ -17,6 +18,31 @@ from ._type_stuff import BotExports
 from .utils import LRU
 
 settings_group = discord.app_commands.Group(name="settings", description="configure settings here")
+
+
+_user_tz_lru: LRU[int, str] = LRU(128)
+
+
+def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
+    _tz = _user_tz_lru.get(user_id, None)
+    if _tz is not None:
+        return _tz
+
+    cursor = conn.cursor()
+    # the update here is required for this to return
+    # even when it already exists, but this is "free" still.
+    row = cursor.execute(
+        """
+        INSERT INTO discord_users (user_id)
+        VALUES (?)
+        ON CONFLICT (user_id)
+        DO UPDATE SET user_tz=excluded.user_tz
+        RETURNING user_tz
+        """,
+        (user_id,),
+    ).fetchone()
+    assert row is not None
+    return row[0]
 
 
 @settings_group.command(name="timezone", description="Set your timezone for time related functions")
@@ -29,7 +55,7 @@ async def tz_set(itx: discord.Interaction[Any], zone: discord.app_commands.Range
     except pytz.UnknownTimeZoneError:
         await itx.response.send_message("Invalid timezone: %s" % zone, ephemeral=True)
     else:
-        conn = itx.client.conn
+        conn: apsw.Connection = itx.client.conn
         cursor = conn.cursor()
         await itx.response.defer(ephemeral=True)
         cursor.execute(
@@ -39,6 +65,7 @@ async def tz_set(itx: discord.Interaction[Any], zone: discord.app_commands.Range
             """,
             (itx.user.id, zone),
         )
+        _user_tz_lru[itx.user.id] = zone
         await itx.followup.send("Timezone set to %s" % zone, ephemeral=True)
 
 
@@ -53,7 +80,7 @@ def closest_zones(current: str) -> list[str]:
 
     common_zones = pytz.common_timezones_set
 
-    zone_matches = {z for z in common_zones if z.startswith(current)}
+    zone_matches = {z for z in common_zones if z.casefold().startswith(current.casefold())}
     if len(zone_matches) > 25:
         return [*sorted(zone_matches)][:25]
     return list(zone_matches)

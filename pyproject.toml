@@ -71,6 +71,8 @@ dependencies = [
     "msgspec>=0.18.6",
     "discord-py[speed] @ git+https://github.com/mikeshardmind/discord.py@salamander-reloaded",
     "pytz>=2024.1",
+    "winloop>=0.1.6; sys_platform == \"win32\"",
+    "uvloop>=0.19.0; sys_platform != \"win32\"",
 ]
 version = "0.1.0"
 

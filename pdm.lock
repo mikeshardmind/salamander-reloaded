@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e9e13fa3d7deb3d94b65642859b14ba46e95c72bfb0ba792b6fa18a4574c7328"
+content_hash = "sha256:8bd396cd2dad59cf72061eb061101b63038d63688056fbf53cdd2f4bd0e7930d"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -211,7 +211,7 @@ dependencies = [
     "Brotli",
     "aiodns>=1.1; sys_platform != \"win32\"",
     "cchardet==2.1.7; python_version < \"3.10\"",
-    "discord-py @ git+https://github.com/mikeshardmind/discord.py@salamander-reloaded",
+    "discord-py @ git+https://github.com/mikeshardmind/discord.py@a472fb30282e2bdfe1dea8ff0b4b50762d8649a3",
     "msgspec>=0.18.6",
 ]
 
@@ -423,6 +423,35 @@ marker = "python_version == \"3.12\""
 files = [
     {file = "typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"},
     {file = "typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"},
+]
+
+[[package]]
+name = "uvloop"
+version = "0.19.0"
+requires_python = ">=3.8.0"
+summary = "Fast implementation of asyncio event loop on top of libuv"
+groups = ["default"]
+marker = "sys_platform != \"win32\" and python_version == \"3.12\""
+files = [
+    {file = "uvloop-0.19.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:da8435a3bd498419ee8c13c34b89b5005130a476bda1d6ca8cfdde3de35cd650"},
+    {file = "uvloop-0.19.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:02506dc23a5d90e04d4f65c7791e65cf44bd91b37f24cfc3ef6cf2aff05dc7ec"},
+    {file = "uvloop-0.19.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2693049be9d36fef81741fddb3f441673ba12a34a704e7b4361efb75cf30befc"},
+    {file = "uvloop-0.19.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7010271303961c6f0fe37731004335401eb9075a12680738731e9c92ddd96ad6"},
+    {file = "uvloop-0.19.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:5daa304d2161d2918fa9a17d5635099a2f78ae5b5960e742b2fcfbb7aefaa593"},
+    {file = "uvloop-0.19.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:7207272c9520203fea9b93843bb775d03e1cf88a80a936ce760f60bb5add92f3"},
+    {file = "uvloop-0.19.0.tar.gz", hash = "sha256:0246f4fd1bf2bf702e06b0d45ee91677ee5c31242f39aab4ea6fe0c51aedd0fd"},
+]
+
+[[package]]
+name = "winloop"
+version = "0.1.6"
+requires_python = ">=3.8.0"
+summary = "Windows version of uvloop"
+groups = ["default"]
+marker = "sys_platform == \"win32\" and python_version == \"3.12\""
+files = [
+    {file = "winloop-0.1.6-cp312-cp312-win_amd64.whl", hash = "sha256:9aa0118354f07b2f36953c88f3767fa9832e4de9be2ee76419b8de72a8315cce"},
+    {file = "winloop-0.1.6.tar.gz", hash = "sha256:bd8cda3a4281b5bb4368f8ed94e833421738ee8dba1d208ce8edc1d476eb7b9c"},
 ]
 
 [[package]]

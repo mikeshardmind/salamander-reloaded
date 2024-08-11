@@ -31,6 +31,7 @@ import scheduler
 import xxhash
 
 from . import base2048, dice, infotools, notes, reminders, settings_commands, tags
+from ._ev_policy import get_event_loop_policy
 from ._type_stuff import RawSubmittable, Reminder
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
 
@@ -292,6 +293,9 @@ def with_logging() -> Generator[None]:
 def run_bot() -> None:
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
+
+    policy_type = get_event_loop_policy()
+    asyncio.set_event_loop_policy(policy_type())
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

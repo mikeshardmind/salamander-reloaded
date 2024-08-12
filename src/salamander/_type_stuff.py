@@ -15,6 +15,12 @@ import apsw
 import discord
 import msgspec
 from discord import app_commands
+from scheduler import DiscordBotScheduler
+
+
+class SalamanderLike(Protocol):
+    sched: DiscordBotScheduler
+    conn: apsw.Connection
 
 
 class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
@@ -28,24 +34,28 @@ class DynButton(discord.ui.Button[discord.ui.View]):
 
 
 class DeleteAllDataFunc(Protocol):
-    def __call__(self, conn: apsw.Connection, /) -> Coroutine[Any, Any, Any]: ...
+    def __call__(self, client: SalamanderLike, /) -> Coroutine[None, None, Any]: ...
 
 
 class DeleteUserDataFunc(Protocol):
-    def __call__(self, conn: apsw.Connection, user_id: int, /) -> Coroutine[Any, Any, Any]: ...
+    def __call__(self, client: SalamanderLike, user_id: int, /) -> Coroutine[None, None, Any]: ...
 
 
 class DeleteGuildDataFunc(Protocol):
-    def __call__(self, conn: apsw.Connection, guild_id: int, /) -> Coroutine[Any, Any, Any]: ...
+    def __call__(self, client: SalamanderLike, guild_id: int, /) -> Coroutine[None, None, Any]: ...
 
 
 class DeleteMemberDataFunc(Protocol):
-    def __call__(self, conn: apsw.Connection, guild_id: int, user_id: int, /) -> Coroutine[Any, Any, Any]: ...
+    def __call__(self, client: SalamanderLike, guild_id: int, user_id: int, /) -> Coroutine[None, None, Any]: ...
 
 
 class RawSubmittableCls(Protocol):
     @classmethod
     async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None: ...
+
+
+class GetUserDataFunc(Protocol):
+    def __call__(self, client: SalamanderLike, /) -> Coroutine[None, None, bytes]: ...
 
 
 class RawSubmittableStatic(Protocol):
@@ -65,3 +75,4 @@ class BotExports(NamedTuple):
     delete_user_data_func: DeleteUserDataFunc | None = None
     delete_guild_data_func: DeleteGuildDataFunc | None = None
     delete_member_data_func: DeleteMemberDataFunc | None = None
+    get_user_data_func: GetUserDataFunc | None = None

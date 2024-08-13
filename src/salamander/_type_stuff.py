@@ -25,6 +25,7 @@ class SalamanderLike(Protocol):
 
 class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
     content: str
+    context: str | None = None
     recur: Literal["Daily", "Weekly"] | None = None
 
 

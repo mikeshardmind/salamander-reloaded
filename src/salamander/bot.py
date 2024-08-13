@@ -185,6 +185,7 @@ class Salamander(discord.AutoShardedClient):
         reminder = event.unpack_extra(Reminder)
         if reminder and user_id:
             embed = discord.Embed(description=reminder.content, title="Your requested reminder")
+            embed.add_field(name="Jump to around where you created this reminder", value=reminder.context)
 
             unrecoverable_fail = False
             try:

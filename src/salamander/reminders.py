@@ -122,7 +122,13 @@ async def remind_in(
         when = user_tz.normalize(when)
 
     ts = DiscordBotScheduler.time_str_from_params(when.year, when.month, when.day, when.hour, when.minute)
-    reminder = Reminder(content=content, recur=None)
+    # make a fake jump url here
+    guild_id = itx.guild_id or "@me"
+    channel_id = itx.channel_id
+    message_id = discord.utils.time_snowflake(now)
+    context = f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+
+    reminder = Reminder(content=content, context=context, recur=None)
     await sched.schedule_event(
         dispatch_name="reminder",
         dispatch_zone=raw_tz,

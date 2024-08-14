@@ -299,6 +299,7 @@ def run_bot() -> None:
     asyncio.set_event_loop_policy(policy_type())
 
     loop = asyncio.new_event_loop()
+    loop.set_task_factory(asyncio.eager_task_factory)
     asyncio.set_event_loop(loop)
     client = Salamander(intents=discord.Intents.none(), conn=conn)
 
@@ -317,7 +318,6 @@ def run_bot() -> None:
         loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
     except NotImplementedError:
         pass
-    loop.set_task_factory(asyncio.eager_task_factory)
 
     def stop_when_done(fut: asyncio.Future[None]):
         loop.stop()

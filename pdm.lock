@@ -73,22 +73,32 @@ files = [
 
 [[package]]
 name = "apsw"
-version = "3.46.0.1"
+version = "3.46.1.0"
 requires_python = ">=3.8"
 summary = "Another Python SQLite Wrapper"
 groups = ["default"]
 files = [
-    {file = "apsw-3.46.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:9c68414281a08a94b8b5c311da59d038bf99217fea5436f9527a0655a4409496"},
-    {file = "apsw-3.46.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:50434559a7f2c06ffe48ba8f07d8b330c47674e651b0f32449fa23bef168e516"},
-    {file = "apsw-3.46.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:354e2f3ad37d8ca3afdeac7dcaf5cae9340cf70a819ccf86d6300114b970ff61"},
-    {file = "apsw-3.46.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:347d039d7f6ebe05111516465057007a86aa60ced1122f98f5e2a14bb40febeb"},
-    {file = "apsw-3.46.0.1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fd382205968bede44d074742c8e99efdb10138fdab1c584f4fb810b6543bed16"},
-    {file = "apsw-3.46.0.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:6c5c2115e5b45d5ad7c0e6f19a0ee571d256f0d12937182625ce7028ddb73eae"},
-    {file = "apsw-3.46.0.1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:12fe2fca3525431dbb459a4a6aa3bde11d65f47665c76a56b5fced850a7a421e"},
-    {file = "apsw-3.46.0.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:469366689ec6cbf526260d0aa241090b876e55cbf7615a3c6e79715cb789bfdd"},
-    {file = "apsw-3.46.0.1-cp312-cp312-win32.whl", hash = "sha256:7ae47a7de0ca9eeee462580a1d1b7e30097ebfac4bd8d69f3b049d11095ca72f"},
-    {file = "apsw-3.46.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:347774ee0388ee14cdf54849b2983a9959740457c36a213d3b63e828af3d4c3a"},
-    {file = "apsw-3.46.0.1.tar.gz", hash = "sha256:a36d1e80180d1dc9c079f766dead8204dfeb1c80707676f9b75c1705800fe7d0"},
+    {file = "apsw-3.46.1.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:a892c3dccbb2f96611a0707fb4cf1573c88a4a2898b45f013a202557f602faa8"},
+    {file = "apsw-3.46.1.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1e01e2cf7faae0d86540e9c638778c98cdd14b365136d9b11d2a0a7dfe4893f3"},
+    {file = "apsw-3.46.1.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bf96999557f5ccc5c8424b0c8637447652994e26b4fe87b72626def24c53dcf1"},
+    {file = "apsw-3.46.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:925c01733c0de8adf7f3cbf299e4bcb38961b62de4436f8704e5ff9800523a7c"},
+    {file = "apsw-3.46.1.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:979f1fca9ec09c1e8bd466ad17fde25dffb06ea621bd8b7c08e404d042c4d362"},
+    {file = "apsw-3.46.1.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:e02c614ca3afceb6c80349485dd2d49fea584a885794ca732513d8aa746781d7"},
+    {file = "apsw-3.46.1.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:c9c130253eba2f70547253f54db05d0e6aa41962d9d712b9e1b8efba1ea2990b"},
+    {file = "apsw-3.46.1.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:999f8fc2607a98ecfddb9d266bd746ae9a08dfa67841700ccfb0108a9cfe9104"},
+    {file = "apsw-3.46.1.0-cp312-cp312-win32.whl", hash = "sha256:0f864580269c5cfe7aed899057a6e76f06940d2bc4134c2e32d36aadad0b3e29"},
+    {file = "apsw-3.46.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:fb770bbe185d3cd6609bb245e22108490c81a025e3be82cd278116b5e21cbbee"},
+    {file = "apsw-3.46.1.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:8113139847f1ad7023a2b8ab8cee15ceec2406c9fbc6709c64a029947485bc23"},
+    {file = "apsw-3.46.1.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:038e9550dc24413a12fde36492ab275410c35982e97d33cc5fd7c18325bbc9e1"},
+    {file = "apsw-3.46.1.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1779f6d512d07b1fa914d268c42ac47170fd41aeae3352c3ce1c5c9f410496b9"},
+    {file = "apsw-3.46.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5b2497696ccb5ac928ba3bbae988a82e00d0be3242b7bdd0553ce4447bdcc73b"},
+    {file = "apsw-3.46.1.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1b182bafe729822f7a934d081d9190b76e0dae1f5f098efa7430fcdd38e3a315"},
+    {file = "apsw-3.46.1.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:d08cf0df8f58b4bdf8c0b7a4c8e70f2a8840be631f40dae848b384636a22fe0d"},
+    {file = "apsw-3.46.1.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:7d37e2f6e1a22bb1a82905237b4d433124ccc53a62f918b9cf7c42c6e49241d0"},
+    {file = "apsw-3.46.1.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:3d49e1996c13661011505cd53502e580c63062eafeebaebcd80ec34b435475c4"},
+    {file = "apsw-3.46.1.0-cp313-cp313-win32.whl", hash = "sha256:42039f5d650ef1bb12e1304aebe47338c20bead38b41bae0f22f98e78cc6855c"},
+    {file = "apsw-3.46.1.0-cp313-cp313-win_amd64.whl", hash = "sha256:1c37abd9f344aefa11c3fe213738c1db4fe49bacef1aee360087fa1ac840b1c4"},
+    {file = "apsw-3.46.1.0.tar.gz", hash = "sha256:96e3dfad1fd0cc77a778aa6b27468292041a8e9cb1f2dcf06bd773762c9b0c0c"},
 ]
 
 [[package]]
@@ -213,7 +223,7 @@ dependencies = [
     "Brotli",
     "aiodns>=1.1; sys_platform != \"win32\"",
     "cchardet==2.1.7; python_version < \"3.10\"",
-    "discord-py @ git+https://github.com/mikeshardmind/discord.py@a472fb30282e2bdfe1dea8ff0b4b50762d8649a3",
+    "discord-py @ git+https://github.com/mikeshardmind/discord.py@salamander-reloaded",
     "msgspec>=0.18.6",
 ]
 
@@ -370,10 +380,10 @@ files = [
 
 [[package]]
 name = "scheduler"
-version = "2024.8.5"
+version = "2024.8.15"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "2f4825d857721753681a576585363751d99dea9b"
+revision = "afafa28c9ff430f6f15a233debe3bcab9e18d77f"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 dependencies = [
@@ -418,19 +428,19 @@ files = [
 
 [[package]]
 name = "uvloop"
-version = "0.19.0"
+version = "0.20.0"
 requires_python = ">=3.8.0"
 summary = "Fast implementation of asyncio event loop on top of libuv"
 groups = ["default"]
 marker = "sys_platform == \"linux\" or sys_platform == \"darwin\""
 files = [
-    {file = "uvloop-0.19.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:da8435a3bd498419ee8c13c34b89b5005130a476bda1d6ca8cfdde3de35cd650"},
-    {file = "uvloop-0.19.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:02506dc23a5d90e04d4f65c7791e65cf44bd91b37f24cfc3ef6cf2aff05dc7ec"},
-    {file = "uvloop-0.19.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2693049be9d36fef81741fddb3f441673ba12a34a704e7b4361efb75cf30befc"},
-    {file = "uvloop-0.19.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7010271303961c6f0fe37731004335401eb9075a12680738731e9c92ddd96ad6"},
-    {file = "uvloop-0.19.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:5daa304d2161d2918fa9a17d5635099a2f78ae5b5960e742b2fcfbb7aefaa593"},
-    {file = "uvloop-0.19.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:7207272c9520203fea9b93843bb775d03e1cf88a80a936ce760f60bb5add92f3"},
-    {file = "uvloop-0.19.0.tar.gz", hash = "sha256:0246f4fd1bf2bf702e06b0d45ee91677ee5c31242f39aab4ea6fe0c51aedd0fd"},
+    {file = "uvloop-0.20.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:4b75f2950ddb6feed85336412b9a0c310a2edbcf4cf931aa5cfe29034829676d"},
+    {file = "uvloop-0.20.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:77fbc69c287596880ecec2d4c7a62346bef08b6209749bf6ce8c22bbaca0239e"},
+    {file = "uvloop-0.20.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6462c95f48e2d8d4c993a2950cd3d31ab061864d1c226bbf0ee2f1a8f36674b9"},
+    {file = "uvloop-0.20.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:649c33034979273fa71aa25d0fe120ad1777c551d8c4cd2c0c9851d88fcb13ab"},
+    {file = "uvloop-0.20.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:3a609780e942d43a275a617c0839d85f95c334bad29c4c0918252085113285b5"},
+    {file = "uvloop-0.20.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:aea15c78e0d9ad6555ed201344ae36db5c63d428818b4b2a42842b3870127c00"},
+    {file = "uvloop-0.20.0.tar.gz", hash = "sha256:4603ca714a754fc8d9b197e325db25b2ea045385e8a3ad05d3463de725fdf469"},
 ]
 
 [[package]]

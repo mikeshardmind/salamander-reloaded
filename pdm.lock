@@ -9,6 +9,8 @@ content_hash = "sha256:4e91c7f7f11da2300c23532a595da4e592b7661069577b0223e244261
 
 [[metadata.targets]]
 requires_python = ">=3.12"
+implementation = "cpython"
+gil_disabled = false
 
 [[package]]
 name = "aiodns"

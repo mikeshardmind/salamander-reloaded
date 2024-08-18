@@ -17,12 +17,14 @@ import os
 import queue
 import re
 import signal
+import socket
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Self
 
+import aiohttp
 import apsw
 import apsw.bestpractice
 import base2048
@@ -302,7 +304,14 @@ def run_bot() -> None:
     loop = asyncio.new_event_loop()
     loop.set_task_factory(asyncio.eager_task_factory)
     asyncio.set_event_loop(loop)
-    client = Salamander(intents=discord.Intents.none(), conn=conn)
+
+    connector = aiohttp.TCPConnector(
+        happy_eyeballs_delay=None,
+        family=socket.AddressFamily.AF_INET,
+        ttl_dns_cache=60,
+    )
+
+    client = Salamander(intents=discord.Intents.none(), conn=conn, connector=connector)
 
     async def entrypoint() -> None:
         sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")

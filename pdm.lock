@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:4e91c7f7f11da2300c23532a595da4e592b7661069577b0223e244261173f70e"
+content_hash = "sha256:80a65082d2c2e1409aa8428fa7d8891c40b21e3266bdab30c318881d082a3cb0"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -225,7 +225,7 @@ dependencies = [
     "Brotli",
     "aiodns>=1.1; sys_platform != \"win32\"",
     "cchardet==2.1.7; python_version < \"3.10\"",
-    "discord-py @ git+https://github.com/mikeshardmind/discord.py@salamander-reloaded",
+    "discord-py @ git+https://github.com/mikeshardmind/discord.py@a472fb30282e2bdfe1dea8ff0b4b50762d8649a3",
     "msgspec>=0.18.6",
 ]
 
@@ -264,6 +264,16 @@ groups = ["default"]
 files = [
     {file = "idna-3.7-py3-none-any.whl", hash = "sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0"},
     {file = "idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc"},
+]
+
+[[package]]
+name = "mikeshardmind-base2048"
+version = "1.0.0"
+requires_python = ">=3.9"
+summary = ""
+groups = ["default"]
+files = [
+    {file = "mikeshardmind_base2048-1.0.0-py3-none-any.whl", hash = "sha256:1a99fd5fe4c6dd6509c1c242d972397194459f9eb2246cc9cfe9125b92385ac9"},
 ]
 
 [[package]]

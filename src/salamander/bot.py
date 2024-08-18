@@ -25,12 +25,13 @@ from typing import Any, Self
 
 import apsw
 import apsw.bestpractice
+import base2048
 import discord
 import msgspec
 import scheduler
 import xxhash
 
-from . import base2048, dice, infotools, notes, reminders, settings_commands, tags
+from . import dice, infotools, notes, reminders, settings_commands, tags
 from ._ev_policy import get_event_loop_policy
 from ._type_stuff import RawSubmittable, Reminder
 from .utils import LRU, platformdir_stuff, resolve_path_with_links

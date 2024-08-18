@@ -14,10 +14,10 @@ from typing import Any
 import apsw
 import discord
 import msgspec
+from base2048 import decode
 from discord import app_commands
 
 from ._type_stuff import BotExports
-from .base2048 import decode
 from .utils import LRU, b2048pack
 
 tag_group = app_commands.Group(name="tag", description="Store and recall content")

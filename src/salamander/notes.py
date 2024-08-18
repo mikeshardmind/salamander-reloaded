@@ -14,10 +14,10 @@ from typing import Any
 import apsw
 import discord
 import msgspec
+from base2048 import decode
 from discord import app_commands
 
 from ._type_stuff import BotExports, DynButton
-from .base2048 import decode
 from .utils import LRU, b2048pack
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)

@@ -235,9 +235,9 @@ def _store_token(token: str, /) -> None:
 
 def _get_token() -> str:
     # TODO: alternative token stores: systemdcreds, etc
-    token = os.getenv("ROLEBOT_TOKEN") or _get_stored_token()
+    token = os.getenv("SALAMANDER_TOKEN") or _get_stored_token()
     if not token:
-        msg = "NO TOKEN? (Use Environment `ROLEBOT_TOKEN` or launch with `--setup` to go through interactive setup)"
+        msg = "NO TOKEN? (Use Environment `SALAMANDER_TOKEN` or launch with `--setup` to go through interactive setup)"
         raise RuntimeError(msg) from None
     return token
 
@@ -305,15 +305,17 @@ def run_bot() -> None:
     loop.set_task_factory(asyncio.eager_task_factory)
     asyncio.set_event_loop(loop)
 
-    connector = aiohttp.TCPConnector(
-        happy_eyeballs_delay=None,
-        family=socket.AddressFamily.AF_INET,
-        ttl_dns_cache=60,
-    )
-
-    client = Salamander(intents=discord.Intents.none(), conn=conn, connector=connector)
+    clients: set[Salamander] = set()
 
     async def entrypoint() -> None:
+        connector = aiohttp.TCPConnector(
+            happy_eyeballs_delay=None,
+            family=socket.AddressFamily.AF_INET,
+            ttl_dns_cache=60,
+        )
+
+        client = Salamander(intents=discord.Intents.none(), conn=conn, connector=connector)
+        clients.add(client)
         sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
         async with sched:
             try:
@@ -340,9 +342,10 @@ def run_bot() -> None:
         log.info("Shutting down via keyboard interrupt.")
     finally:
         fut.remove_done_callback(stop_when_done)
-        if not client.is_closed():
-            # give the client a brief opportunity to close
-            _close_task = loop.create_task(client.close())  # noqa: RUF006, loop is closed in this scope
+        for client in clients:
+            if not client.is_closed():
+                # give the client a brief opportunity to close
+                _close_task = loop.create_task(client.close())  # noqa: RUF006, loop is closed in this scope
         loop.run_until_complete(asyncio.sleep(0.001))
 
         tasks: set[asyncio.Task[Any]] = {t for t in asyncio.all_tasks(loop) if not t.done()}

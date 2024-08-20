@@ -342,7 +342,7 @@ def run_bot() -> None:
         fut.remove_done_callback(stop_when_done)
         if not client.is_closed():
             # give the client a brief opportunity to close
-            _close_task = loop.create_task(client.close())  # noqa: RUF006
+            _close_task = loop.create_task(client.close())  # noqa: RUF006, loop is closed in this scope
         loop.run_until_complete(asyncio.sleep(0.001))
 
         tasks: set[asyncio.Task[Any]] = {t for t in asyncio.all_tasks(loop) if not t.done()}

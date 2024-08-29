@@ -288,6 +288,10 @@ def with_logging() -> Generator[None]:
     q_listener = logging.handlers.QueueListener(q, stream_h, rotating_file_handler)
     root_logger.addHandler(q_handler)
 
+    # Add apsw sqlite log forwarding
+    apsw_log = logging.getLogger("apsw_forwarded")
+    apsw.ext.log_sqlite(logger=apsw_log)
+
     try:
         q_listener.start()
         yield

@@ -18,6 +18,7 @@ import queue
 import re
 import signal
 import socket
+import ssl
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import timedelta
@@ -32,6 +33,7 @@ import base2048
 import discord
 import msgspec
 import scheduler
+import truststore
 import xxhash
 
 from . import dice, infotools, notes, reminders, settings_commands, tags
@@ -310,11 +312,15 @@ def run_bot() -> None:
     loop.set_task_factory(asyncio.eager_task_factory)
     asyncio.set_event_loop(loop)
 
+    # windows ssl root ca issues
+    ssl_ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
     connector = aiohttp.TCPConnector(
         happy_eyeballs_delay=None,
         family=socket.AddressFamily.AF_INET,
         ttl_dns_cache=60,
         loop=loop,
+        ssl_context=ssl_ctx,
     )
 
     client = Salamander(intents=discord.Intents.none(), conn=conn, connector=connector)

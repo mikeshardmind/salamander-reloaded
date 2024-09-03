@@ -261,11 +261,11 @@ files = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5089+g3464d756"
+version = "2.5.0a5091+gfb8091d3"
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "3464d75641e8ef4bb7b74af13205db89b10e7738"
+revision = "fb8091d3b6de9675b49004983324d35c9dd8828e"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 dependencies = [
@@ -275,12 +275,12 @@ dependencies = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5089"
+version = "2.5.0a5091"
 extras = ["speed"]
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "3464d75641e8ef4bb7b74af13205db89b10e7738"
+revision = "fb8091d3b6de9675b49004983324d35c9dd8828e"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 dependencies = [

@@ -30,7 +30,7 @@ class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
 
 
 class DynButton(discord.ui.Button[discord.ui.View]):
-    async def callback(self, interaction: discord.Interaction[Any]) -> Any:
+    async def callback(self, interaction: discord.Interaction) -> Any:
         pass
 
 
@@ -77,3 +77,7 @@ class BotExports(NamedTuple):
     delete_guild_data_func: DeleteGuildDataFunc | None = None
     delete_member_data_func: DeleteMemberDataFunc | None = None
     get_user_data_func: GetUserDataFunc | None = None
+
+
+class HasExports(Protocol):
+    exports: BotExports

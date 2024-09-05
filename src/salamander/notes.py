@@ -9,7 +9,6 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
 
 import apsw
 import discord
@@ -18,6 +17,7 @@ from base2048 import decode
 from discord import app_commands
 
 from ._type_stuff import BotExports, DynButton
+from .bot import Salamander
 from .utils import LRU, b2048pack
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
@@ -47,7 +47,7 @@ class NoteModal(discord.ui.Modal):
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
+    async def raw_submit(interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
         packed = decode(data)
         author_id, target_id = msgspec.msgpack.decode(packed, type=tuple[int, int])
         assert interaction.data
@@ -127,7 +127,9 @@ class NotesView:
         return discord.Embed(description=content, timestamp=dt), first_disabled, last_disabled, prev_next_disabled, ts
 
     @classmethod
-    async def start(cls, itx: discord.Interaction[Any], conn: apsw.Connection, user_id: int, target_id: int) -> None:
+    async def start(
+        cls, itx: discord.Interaction[Salamander], conn: apsw.Connection, user_id: int, target_id: int
+    ) -> None:
         await cls.edit_to_current_index(itx, conn, user_id, target_id, 0, first=True)
 
     @classmethod
@@ -174,7 +176,7 @@ class NotesView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
+    async def raw_submit(cls, interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
         action, user_id, target_id, idx, ts = msgspec.msgpack.decode(decode(data), type=tuple[str, int, int, int, str])
         if interaction.user.id != user_id:
             return
@@ -196,13 +198,13 @@ class NotesView:
 
 
 @app_commands.context_menu(name="Add note")
-async def add_note_ctx(itx: discord.Interaction[Any], user: discord.Member | discord.User) -> None:
+async def add_note_ctx(itx: discord.Interaction[Salamander], user: discord.Member | discord.User) -> None:
     modal = NoteModal(target_id=user.id, author_id=itx.user.id)
     await itx.response.send_modal(modal)
 
 
 @app_commands.context_menu(name="Get notes")
-async def get_note_ctx(itx: discord.Interaction[Any], user: discord.Member | discord.User) -> None:
+async def get_note_ctx(itx: discord.Interaction[Salamander], user: discord.Member | discord.User) -> None:
     menu = NotesView()
     await menu.start(itx, itx.client.conn, itx.user.id, user.id)
 

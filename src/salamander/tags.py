@@ -9,7 +9,6 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 from itertools import chain
-from typing import Any
 
 import apsw
 import discord
@@ -18,6 +17,7 @@ from base2048 import decode
 from discord import app_commands
 
 from ._type_stuff import BotExports
+from .bot import Salamander
 from .utils import LRU, b2048pack
 
 tag_group = app_commands.Group(name="tag", description="Store and recall content")
@@ -45,7 +45,7 @@ class TagModal(discord.ui.Modal):
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
+    async def raw_submit(interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
         cursor: apsw.Cursor = interaction.client.conn.cursor()
         packed = decode(data)
         author_id, tag_name = msgspec.msgpack.decode(packed, type=tuple[int, str])
@@ -86,7 +86,7 @@ async def user_tag_create(itx: discord.Interaction, name: discord.app_commands.R
 
 
 @tag_group.command(name="get")
-async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
+async def user_tag_get(itx: discord.Interaction[Salamander], name: discord.app_commands.Range[str, 1, 20]) -> None:
     """Get some content"""
     cursor: apsw.Cursor = itx.client.conn.cursor()
     row = cursor.execute(
@@ -104,7 +104,7 @@ async def user_tag_get(itx: discord.Interaction[Any], name: discord.app_commands
 
 
 @tag_group.command(name="delete")
-async def user_tag_del(itx: discord.Interaction[Any], name: discord.app_commands.Range[str, 1, 20]) -> None:
+async def user_tag_del(itx: discord.Interaction[Salamander], name: discord.app_commands.Range[str, 1, 20]) -> None:
     """Delete a tag."""
     await itx.response.defer(ephemeral=True)
     conn: apsw.Connection = itx.client.conn
@@ -127,7 +127,7 @@ _cache: LRU[tuple[int, str], list[app_commands.Choice[str]]] = LRU(1024)
 @user_tag_del.autocomplete("name")
 @user_tag_get.autocomplete("name")
 async def tag_autocomplete(
-    itx: discord.Interaction[Any],
+    itx: discord.Interaction[Salamander],
     current: str,
 ) -> list[app_commands.Choice[str]]:
     # TODO: smarter trie based cache? is it worth it?

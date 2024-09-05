@@ -9,7 +9,6 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
 
 import apsw
 import discord
@@ -17,6 +16,7 @@ import pytz
 from scheduler import DiscordBotScheduler, ScheduledDispatch
 
 from ._type_stuff import BotExports, DynButton, Reminder
+from .bot import Salamander
 from .settings_commands import get_user_tz
 from .utils import b2048pack, b2048unpack
 
@@ -45,13 +45,13 @@ class ReminderView:
         return embed, first_disabled, last_disabled, prev_next_disabled, item.task_id
 
     @classmethod
-    async def start(cls, itx: discord.Interaction[Any], user_id: int) -> None:
+    async def start(cls, itx: discord.Interaction[Salamander], user_id: int) -> None:
         await cls.edit_to_current_index(itx, user_id, 0, first=True)
 
     @classmethod
     async def edit_to_current_index(
         cls,
-        itx: discord.Interaction[Any],
+        itx: discord.Interaction[Salamander],
         user_id: int,
         index: int,
         first: bool = False,
@@ -90,7 +90,7 @@ class ReminderView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None:
+    async def raw_submit(cls, interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
         action, user_id, idx, tid = b2048unpack(data, tuple[str, int, int, str])
         if interaction.user.id != user_id:
             return
@@ -103,7 +103,7 @@ class ReminderView:
 
 @reminder_group.command(name="in", description="remind in an amount of time")
 async def remind_in(
-    itx: discord.Interaction[Any],
+    itx: discord.Interaction[Salamander],
     days: discord.app_commands.Range[int, 0, 365] = 0,
     hours: discord.app_commands.Range[int, 0, 72] = 0,
     minutes: discord.app_commands.Range[int, 0, 59] = 0,
@@ -142,13 +142,13 @@ async def remind_in(
 
 
 # @reminder_group.command(name="at", description="remind at a specific time (uses your configured timezone)")
-async def remind_at(itx: discord.Interaction[Any]) -> None:
+async def remind_at(itx: discord.Interaction[Salamander]) -> None:
     ...
     # TODO: time parser
 
 
 @reminder_group.command(name="list", description="view and optionally remove your reminders.")
-async def reminder_list(itx: discord.Interaction[Any]) -> None:
+async def reminder_list(itx: discord.Interaction[Salamander]) -> None:
     await ReminderView.start(itx, itx.user.id)
 
 

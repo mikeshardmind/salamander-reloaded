@@ -90,7 +90,7 @@ reportUnnecessaryTypeIgnoreComment = "warning"
 
 
 [tool.pdm.scripts]
-salamander = {call = "salamander.bot:main"}
+salamander = {call = "salamander.runner:main"}
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"

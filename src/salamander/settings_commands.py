@@ -8,13 +8,12 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-from typing import Any
-
 import apsw
 import discord
 import pytz
 
 from ._type_stuff import BotExports
+from .bot import Salamander
 from .utils import LRU
 
 settings_group = discord.app_commands.Group(name="settings", description="configure settings here")
@@ -46,7 +45,7 @@ def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
 
 
 @settings_group.command(name="timezone", description="Set your timezone for time related functions")
-async def tz_set(itx: discord.Interaction[Any], zone: discord.app_commands.Range[str, 1, 70]) -> None:
+async def tz_set(itx: discord.Interaction[Salamander], zone: discord.app_commands.Range[str, 1, 70]) -> None:
     if zone == "local":
         await itx.response.send_message("Invalid timezone: %s" % zone, ephemeral=True)
         return
@@ -87,7 +86,7 @@ def closest_zones(current: str) -> list[str]:
 
 
 @tz_set.autocomplete("zone")
-async def zone_ac(itx: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+async def zone_ac(itx: discord.Interaction[Salamander], current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=x, value=x) for x in closest_zones(current)]
 
 

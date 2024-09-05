@@ -12,13 +12,18 @@ import discord
 from discord import app_commands
 
 from ._type_stuff import BotExports
+from .bot import Salamander
 from .dicemath import DiceError, Expression
 
 dice_group = app_commands.Group(name="dice", description="Keep rolling")
 
 
 @dice_group.command(name="roll")
-async def roll(itx: discord.Interaction, expression: app_commands.Range[str, 0, 500], secret: bool = False) -> None:
+async def roll(
+    itx: discord.Interaction[Salamander],
+    expression: app_commands.Range[str, 0, 500],
+    secret: bool = False,
+) -> None:
     """Roll some dice"""
 
     try:
@@ -35,7 +40,7 @@ async def roll(itx: discord.Interaction, expression: app_commands.Range[str, 0, 
 
 @dice_group.command(name="info")
 async def rverb(
-    itx: discord.Interaction,
+    itx: discord.Interaction[Salamander],
     expression: app_commands.Range[str, 0, 500],
     secret: bool = False,
 ) -> None:

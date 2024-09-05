@@ -13,6 +13,7 @@ import io
 import discord
 
 from ._type_stuff import BotExports
+from .bot import Salamander
 
 
 def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
@@ -25,7 +26,7 @@ def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
 
 
 @discord.app_commands.context_menu(name="Avatar")
-async def user_avatar(itx: discord.Interaction, user: discord.User | discord.Member) -> None:
+async def user_avatar(itx: discord.Interaction[Salamander], user: discord.User | discord.Member) -> None:
     await itx.response.send_message(embed=embed_from_user(user), ephemeral=True)
 
 

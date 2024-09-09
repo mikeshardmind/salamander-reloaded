@@ -10,17 +10,17 @@ from __future__ import annotations
 
 from itertools import chain
 
-import apsw
 import discord
-import msgspec
+from apsw import Connection
 from base2048 import decode
-from discord import app_commands
+from discord.app_commands import Choice, Group, Range
+from msgspec import msgpack
 
 from ._type_stuff import BotExports
-from .bot import Salamander
+from .bot import Interaction
 from .utils import LRU, b2048pack
 
-tag_group = app_commands.Group(name="tag", description="Store and recall content")
+tag_group = Group(name="tag", description="Store and recall content")
 
 
 class TagModal(discord.ui.Modal):
@@ -39,16 +39,16 @@ class TagModal(discord.ui.Modal):
         custom_id: str = "",
         tag_name: str,
         author_id: int,
-    ) -> None:
+    ):
         disc_safe = b2048pack((author_id, tag_name))
         custom_id = f"m:tag:{disc_safe}"
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
-        cursor: apsw.Cursor = interaction.client.conn.cursor()
+    async def raw_submit(interaction: Interaction, conn: Connection, data: str):
+        cursor = interaction.client.conn.cursor()
         packed = decode(data)
-        author_id, tag_name = msgspec.msgpack.decode(packed, type=tuple[int, str])
+        author_id, tag_name = msgpack.decode(packed, type=tuple[int, str])
 
         assert interaction.data
 
@@ -80,18 +80,20 @@ class TagModal(discord.ui.Modal):
 
 
 @tag_group.command(name="create")
-async def user_tag_create(itx: discord.Interaction, name: discord.app_commands.Range[str, 1, 20]) -> None:
+async def user_tag_create(itx: Interaction, name: Range[str, 1, 20]):
     """Creates or replaces tag content"""
-    await itx.response.send_modal(TagModal(tag_name=name, author_id=itx.user.id))
+    modal = TagModal(tag_name=name, author_id=itx.user.id)
+    await itx.response.send_modal(modal)
 
 
 @tag_group.command(name="get")
-async def user_tag_get(itx: discord.Interaction[Salamander], name: discord.app_commands.Range[str, 1, 20]) -> None:
+async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]):
     """Get some content"""
-    cursor: apsw.Cursor = itx.client.conn.cursor()
+    cursor = itx.client.conn.cursor()
     row = cursor.execute(
         """
-        SELECT content FROM user_tags WHERE user_id = ? AND tag_name = ? LIMIT 1;
+        SELECT content FROM user_tags
+        WHERE user_id = ? AND tag_name = ? LIMIT 1;
         """,
         (itx.user.id, name),
     ).fetchone()
@@ -104,10 +106,10 @@ async def user_tag_get(itx: discord.Interaction[Salamander], name: discord.app_c
 
 
 @tag_group.command(name="delete")
-async def user_tag_del(itx: discord.Interaction[Salamander], name: discord.app_commands.Range[str, 1, 20]) -> None:
+async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]):
     """Delete a tag."""
     await itx.response.defer(ephemeral=True)
-    conn: apsw.Connection = itx.client.conn
+    conn: Connection = itx.client.conn
     cursor = conn.cursor()
     row = cursor.execute(
         """
@@ -121,30 +123,31 @@ async def user_tag_del(itx: discord.Interaction[Salamander], name: discord.app_c
     await itx.followup.send(msg, ephemeral=True)
 
 
-_cache: LRU[tuple[int, str], list[app_commands.Choice[str]]] = LRU(1024)
+_cache: LRU[tuple[int, str], list[Choice[str]]] = LRU(1024)
 
 
 @user_tag_del.autocomplete("name")
 @user_tag_get.autocomplete("name")
-async def tag_autocomplete(
-    itx: discord.Interaction[Salamander],
-    current: str,
-) -> list[app_commands.Choice[str]]:
+async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
     # TODO: smarter trie based cache? is it worth it?
-    val = _cache.get((itx.user.id, current), None)
+    key = (itx.user.id, current)
+    val = _cache.get(key, None)
 
     if val is not None:
         return val
 
-    cursor: apsw.Cursor = itx.client.conn.cursor()
-    # TODO: FTS index instead
-    row = cursor.execute(
-        """
-        SELECT tag_name FROM user_tags WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
+    cursor = itx.client.conn.cursor()
+    it = chain.from_iterable(
+        cursor.execute(
+            """
+        SELECT tag_name
+        FROM user_tags
+        WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
         """,
-        (itx.user.id, current),
+            key,
+        )
     )
-    _cache[(itx.user.id, current)] = r = [app_commands.Choice(name=c, value=c) for c in chain.from_iterable(row)]
+    _cache[key] = r = [Choice(name=c, value=c) for c in it]
     return r
 
 

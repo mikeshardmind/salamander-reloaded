@@ -39,7 +39,6 @@ from .utils import platformdir_stuff, resolve_path_with_links
 log = logging.getLogger(__name__)
 
 
-
 def _get_stored_token() -> str | None:
     token_file_path = platformdir_stuff.user_config_path / "salamander.token"
     token_file_path = resolve_path_with_links(token_file_path)
@@ -48,7 +47,7 @@ def _get_stored_token() -> str | None:
         return base2048.decode(data).decode("utf-8") if data else None
 
 
-def _store_token(token: str, /) -> None:
+def _store_token(token: str, /):
     token_file_path = platformdir_stuff.user_config_path / "salamander.token"
     token_file_path = resolve_path_with_links(token_file_path)
     with token_file_path.open(mode="w") as fp:
@@ -59,14 +58,18 @@ def _get_token() -> str:
     # TODO: alternative token stores: systemdcreds, etc
     token = os.getenv("SALAMANDER_TOKEN") or _get_stored_token()
     if not token:
-        msg = "NO TOKEN? (Use Environment `SALAMANDER_TOKEN` or launch with `--setup` to go through interactive setup)"
+        msg = (
+            "NO TOKEN? (Use Environment `SALAMANDER_TOKEN`"
+            "or launch with `--setup` to go through interactive setup)"
+        )
         raise RuntimeError(msg) from None
     return token
 
 
-def run_setup() -> None:
+def run_setup():
     prompt = (
-        "Paste the discord token you'd like to use for this bot here (won't be visible) then press enter. "
+        "Paste the discord token you'd like to use for this bot here"
+        "(won't be visible) then press enter. "
         "This will be stored for later use >"
     )
     token = getpass.getpass(prompt)
@@ -95,7 +98,9 @@ def with_logging() -> Generator[None]:
 
     log_path = resolve_path_with_links(platformdir_stuff.user_log_path, folder=True)
     log_loc = log_path / "salamander.log"
-    rotating_file_handler = logging.handlers.RotatingFileHandler(log_loc, maxBytes=2_000_000, backupCount=5)
+    rotating_file_handler = logging.handlers.RotatingFileHandler(
+        log_loc, maxBytes=2_000_000, backupCount=5
+    )
 
     # intentional, discord.py won't use the stream coloring if passed the queue handler
     discord.utils.setup_logging(handler=stream_h)
@@ -120,12 +125,12 @@ def with_logging() -> Generator[None]:
         q_listener.stop()
 
 
-def run_bot() -> None:
+def run_bot():
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
 
-    policy_type = get_event_loop_policy()
-    asyncio.set_event_loop_policy(policy_type())
+    policy = get_event_loop_policy()
+    asyncio.set_event_loop_policy(policy)
 
     loop = asyncio.new_event_loop()
     loop.set_task_factory(asyncio.eager_task_factory)
@@ -144,17 +149,26 @@ def run_bot() -> None:
 
     from . import dice, infotools, notes, reminders, settings_commands, tags
 
-    inital_exts: list[HasExports] = [dice, infotools, notes, reminders, settings_commands, tags]
+    inital_exts: list[HasExports] = [
+        dice,
+        infotools,
+        notes,
+        reminders,
+        settings_commands,
+        tags,
+    ]
 
     from .bot import Salamander
 
     client = Salamander(
-        intents=discord.Intents.none(), conn=conn, connector=connector, initial_exts=inital_exts,
+        intents=discord.Intents.none(),
+        conn=conn,
+        connector=connector,
+        initial_exts=inital_exts,
     )
     sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
 
-    async def entrypoint() -> None:
-
+    async def entrypoint():
         async with sched:
             try:
                 async with client:
@@ -234,7 +248,7 @@ def run_bot() -> None:
     conn.pragma("optimize")
 
 
-def ensure_schema() -> None:
+def ensure_schema():
     # The below is a hack of a solution, but it only runs against a trusted file
     # I don't want to have the schema repeated in multiple places
 
@@ -259,7 +273,7 @@ def ensure_schema() -> None:
         list(conn.execute(statement))
 
 
-def main() -> None:
+def main():
     os.umask(0o077)
     to_apply: tuple[Any, ...] = (
         apsw.bestpractice.connection_wal,
@@ -270,7 +284,13 @@ def main() -> None:
     apsw.bestpractice.apply(to_apply)  # pyright: ignore[reportUnknownMemberType]
     parser = argparse.ArgumentParser(description="Small suite of user installable tools")
     excl_setup = parser.add_mutually_exclusive_group()
-    excl_setup.add_argument("--setup", action="store_true", default=False, help="Run interactive setup.", dest="isetup")
+    excl_setup.add_argument(
+        "--setup",
+        action="store_true",
+        default=False,
+        help="Run interactive setup.",
+        dest="isetup",
+    )
     excl_setup.add_argument(
         "--set-token-to",
         default=None,

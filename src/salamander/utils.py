@@ -45,12 +45,12 @@ class LRU(Generic[K, V]):
         self.cache[key] = self.cache.pop(key)
         return self.cache[key]
 
-    def __setitem__(self, key: K, value: V, /) -> None:
+    def __setitem__(self, key: K, value: V, /):
         self.cache[key] = value
         if len(self.cache) > self.maxsize:
             self.cache.pop(next(iter(self.cache)))
 
-    def remove(self, key: K) -> None:
+    def remove(self, key: K):
         self.cache.pop(key, None)
 
 
@@ -63,7 +63,9 @@ def resolve_path_with_links(path: Path, folder: bool = False) -> Path:
     except FileNotFoundError:
         path = resolve_path_with_links(path.parent, folder=True) / path.name
         if folder:
-            path.mkdir(mode=0o700)  # python's default is world read/write/traversable... (0o777)
+            # python's default is world read/write/traversable... (0o777)
+            path.mkdir(mode=0o700)
         else:
-            path.touch(mode=0o600)  # python's default is world read/writable... (0o666)
+            # python's default is world read/writable... (0o666)
+            path.touch(mode=0o600)
         return path.resolve(strict=True)

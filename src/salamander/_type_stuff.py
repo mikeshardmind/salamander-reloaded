@@ -12,9 +12,9 @@ from collections.abc import Coroutine
 from typing import Any, Literal, NamedTuple, Protocol
 
 import apsw
-import discord
 import msgspec
-from discord import app_commands
+from discord import Interaction as DInter
+from discord import app_commands, ui
 from scheduler import DiscordBotScheduler
 
 
@@ -29,43 +29,49 @@ class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
     recur: Literal["Daily", "Weekly"] | None = None
 
 
-class DynButton(discord.ui.Button[discord.ui.View]):
-    async def callback(self, interaction: discord.Interaction) -> Any:
+class DynButton(ui.Button[ui.View]):
+    async def callback(self, interaction: DInter) -> Any:
         pass
 
 
+type Coro[T] = Coroutine[None, None, T]
+
+
 class DeleteAllDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, /) -> Coroutine[None, None, Any]: ...
+    def __call__(self, client: SalamanderLike, /) -> Coro[Any]: ...
 
 
 class DeleteUserDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, user_id: int, /) -> Coroutine[None, None, Any]: ...
+    def __call__(self, client: SalamanderLike, user_id: int, /) -> Coro[Any]: ...
 
 
 class DeleteGuildDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, guild_id: int, /) -> Coroutine[None, None, Any]: ...
+    def __call__(self, client: SalamanderLike, guild_id: int, /) -> Coro[Any]: ...
 
 
 class DeleteMemberDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, guild_id: int, user_id: int, /) -> Coroutine[None, None, Any]: ...
+    def __call__(
+        self, client: SalamanderLike, guild_id: int, user_id: int, /
+    ) -> Coro[Any]: ...
 
 
 class RawSubmittableCls(Protocol):
     @classmethod
-    async def raw_submit(cls, interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None: ...
+    async def raw_submit(cls, interaction: DInter, conn: apsw.Connection, data: str): ...
 
 
 class GetUserDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, /) -> Coroutine[None, None, bytes]: ...
+    def __call__(self, client: SalamanderLike, /) -> Coro[bytes]: ...
 
 
 class RawSubmittableStatic(Protocol):
     @staticmethod
-    async def raw_submit(interaction: discord.Interaction[Any], conn: apsw.Connection, data: str) -> None: ...
+    async def raw_submit(interaction: DInter, conn: apsw.Connection, data: str): ...
 
 
 type RawSubmittable = RawSubmittableCls | RawSubmittableStatic
-type AppCommandTypes = app_commands.Group | app_commands.Command[Any, Any, Any] | app_commands.ContextMenu
+type ACommand = app_commands.Command[Any, Any, Any]
+type AppCommandTypes = app_commands.Group | ACommand | app_commands.ContextMenu
 
 
 class BotExports(NamedTuple):

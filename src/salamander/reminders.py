@@ -16,11 +16,13 @@ import pytz
 from scheduler import DiscordBotScheduler, ScheduledDispatch
 
 from ._type_stuff import BotExports, DynButton, Reminder
-from .bot import Salamander
+from .bot import Salamander, Interaction
 from .settings_commands import get_user_tz
 from .utils import b2048pack, b2048unpack
 
-reminder_group = discord.app_commands.Group(name="remindme", description="remind yourself about something, later")
+reminder_group = discord.app_commands.Group(
+    name="remindme", description="remind yourself about something, later"
+)
 
 
 TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
@@ -28,7 +30,9 @@ TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
 
 class ReminderView:
     @staticmethod
-    def index_setup(items: list[ScheduledDispatch], index: int) -> tuple[discord.Embed, bool, bool, bool, str]:
+    def index_setup(
+        items: list[ScheduledDispatch], index: int
+    ) -> tuple[discord.Embed, bool, bool, bool, str]:
         ln = len(items)
         index %= ln
 
@@ -45,18 +49,18 @@ class ReminderView:
         return embed, first_disabled, last_disabled, prev_next_disabled, item.task_id
 
     @classmethod
-    async def start(cls, itx: discord.Interaction[Salamander], user_id: int) -> None:
+    async def start(cls, itx: Interaction, user_id: int):
         await cls.edit_to_current_index(itx, user_id, 0, first=True)
 
     @classmethod
     async def edit_to_current_index(
         cls,
-        itx: discord.Interaction[Salamander],
+        itx: Interaction,
         user_id: int,
         index: int,
         first: bool = False,
         use_followup: bool = False,
-    ) -> None:
+    ):
         sched: DiscordBotScheduler = itx.client.sched
         _l = await sched.list_event_schedule_for_user("reminder", user_id)
 
@@ -67,22 +71,26 @@ class ReminderView:
             if first:
                 await send("You have no reminders set", ephemeral=True)
             else:
-                await edit(content="You no longer have any reminders set", view=None, embed=None)
+                await edit(
+                    content="You no longer have any reminders set", view=None, embed=None
+                )
             return
 
-        element, first_disabled, last_disabled, prev_next_disabled, tid = cls.index_setup(_l, index)
+        element, first_disabled, last_disabled, prev_next_disabled, tid = cls.index_setup(
+            _l, index
+        )
         v = discord.ui.View(timeout=4)
 
         c_id = "b:rmndrlst:" + b2048pack(("first", user_id, 0, tid))
-        v.add_item(DynButton(label="<<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=first_disabled))
+        v.add_item(DynButton(label="<<", custom_id=c_id, disabled=first_disabled))
         c_id = "b:rmndrlst:" + b2048pack(("previous", user_id, index - 1, tid))
-        v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=prev_next_disabled))
+        v.add_item(DynButton(label="<", custom_id=c_id, disabled=prev_next_disabled))
         c_id = "b:rmndrlst:" + b2048pack(("delete", user_id, index, tid))
         v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
         c_id = "b:rmndrlst:" + b2048pack(("next", user_id, index + 1, tid))
-        v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=prev_next_disabled))
+        v.add_item(DynButton(label=">", custom_id=c_id, disabled=prev_next_disabled))
         c_id = "b:rmndrlst:" + b2048pack(("last", user_id, len(_l) - 1, tid))
-        v.add_item(DynButton(label=">>", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=last_disabled))
+        v.add_item(DynButton(label=">>", custom_id=c_id, disabled=last_disabled))
 
         if first:
             await send(embed=element, view=v, ephemeral=True)
@@ -90,7 +98,7 @@ class ReminderView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
+    async def raw_submit(cls, interaction: Interaction, conn: apsw.Connection, data: str):
         action, user_id, idx, tid = b2048unpack(data, tuple[str, int, int, str])
         if interaction.user.id != user_id:
             return
@@ -103,12 +111,12 @@ class ReminderView:
 
 @reminder_group.command(name="in", description="remind in an amount of time")
 async def remind_in(
-    itx: discord.Interaction[Salamander],
+    itx: Interaction,
     days: discord.app_commands.Range[int, 0, 365] = 0,
     hours: discord.app_commands.Range[int, 0, 72] = 0,
     minutes: discord.app_commands.Range[int, 0, 59] = 0,
     content: discord.app_commands.Range[str, 1, 1000] = "",
-) -> None:
+):
     sched: DiscordBotScheduler = itx.client.sched
     await itx.response.defer(ephemeral=True)
     # strategy here is based on a mix of factors
@@ -121,7 +129,9 @@ async def remind_in(
         # TODO: document reminder behavior
         when = user_tz.normalize(when)
 
-    ts = DiscordBotScheduler.time_str_from_params(when.year, when.month, when.day, when.hour, when.minute)
+    ts = DiscordBotScheduler.time_str_from_params(
+        when.year, when.month, when.day, when.hour, when.minute
+    )
     # make a fake jump url here
     guild_id = itx.guild_id or "@me"
     channel_id = itx.channel_id
@@ -141,14 +151,14 @@ async def remind_in(
     await itx.followup.send(f"Reminder scheduled for {formatted_ts}", ephemeral=True)
 
 
-# @reminder_group.command(name="at", description="remind at a specific time (uses your configured timezone)")
-async def remind_at(itx: discord.Interaction[Salamander]) -> None:
+# @reminder_group.command(name="at", description="remind at a specific time")
+async def remind_at(itx: Interaction):
     ...
     # TODO: time parser
 
 
 @reminder_group.command(name="list", description="view and optionally remove your reminders.")
-async def reminder_list(itx: discord.Interaction[Salamander]) -> None:
+async def reminder_list(itx: Interaction):
     await ReminderView.start(itx, itx.user.id)
 
 

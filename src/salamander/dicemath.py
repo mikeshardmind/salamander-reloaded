@@ -107,13 +107,19 @@ def fast_analytic_ev(quant: int, sides: int, low: int, high: int) -> float:
 
 
 def fast_roll(quant: int, sides: int, low: int, high: int) -> int:
-    numbers = random.choices(range(1, sides + 1), k=quant)  # noqa: S311
+    numbers = random.choices(range(1, sides + 1), k=quant)
     numbers.sort()
     return sum(numbers[low:high])
 
 
 class NumberofDice:
-    def __init__(self, quant: int | str, sides: int | str, kd: str | None = None, kdquant: str | None = None):
+    def __init__(
+        self,
+        quant: int | str,
+        sides: int | str,
+        kd: str | None = None,
+        kdquant: str | None = None,
+    ):
         self.quant = int(quant)
         self.sides = int(sides)
 
@@ -142,27 +148,35 @@ class NumberofDice:
 
     @property
     def high(self) -> int:
-        quant = (self.keep_low or self.keep_high) if self._kd_expr else self.quant
-        return quant * self.sides
+        if self._kd_expr:
+            return self.quant * self.sides
+        return (self.keep_low or self.keep_high) * self.sides
 
     @property
     def low(self) -> int:
-        return (self.keep_low or self.keep_high) if self._kd_expr else self.quant
+        if self._kd_expr:
+            return self.keep_low or self.keep_high
+        return self.quant
 
     def get_ev(self) -> float:
         return fast_analytic_ev(self.quant, self.sides, self.keep_low, self.keep_high)
 
     def verbose_roll(self) -> tuple[int, list[int]]:
-        numbers = random.choices(range(1, self.sides + 1), k=self.quant)  # noqa: S311
-        if self._kd_expr:
-            numbers.sort()
-            filtered = numbers[-self.keep_high :] if self.keep_high < self.quant else numbers[: self.keep_low]
-            return sum(filtered), list(numbers)
-        return sum(numbers), list(numbers)
+        numbers = random.choices(range(1, self.sides + 1), k=self.quant)
+        if not self._kd_expr:
+            return sum(numbers), list(numbers)
+
+        numbers.sort()
+        if self.keep_high < self.quant:
+            filtered = numbers[-self.keep_high :]
+        else:
+            filtered = numbers[: self.keep_low]
+
+        return sum(filtered), list(numbers)
 
     def full_verbose_roll(self) -> tuple[int, str]:
         parts: list[str] = []
-        choices = random.choices(range(1, self.sides + 1), k=self.quant)  # noqa: S311
+        choices = random.choices(range(1, self.sides + 1), k=self.quant)
         parts.append(f"{self.quant}d{self.sides} ({', '.join(map(str, choices))})")
         if self._kd_expr:
             if self.keep_high < self.quant:
@@ -220,7 +234,7 @@ class Expression:
     def __str__(self):
         return " ".join(map(_die_or_component_fmt, self._components))
 
-    def add_dice(self, die: NumberofDice | int) -> None:
+    def add_dice(self, die: NumberofDice | int):
         if len(self._components) % 2:
             msg = f"Expected an operator next (Current: {self})"
             raise DiceError(msg)
@@ -234,7 +248,7 @@ class Expression:
 
         self._components.append(die)
 
-    def add_operator(self, op: OperatorType) -> None:
+    def add_operator(self, op: OperatorType):
         if not len(self._components) % 2:
             msg = f"Expected a number or die next (Current: {self}"
             raise DiceError(msg)

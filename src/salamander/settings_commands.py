@@ -13,10 +13,13 @@ import discord
 import pytz
 
 from ._type_stuff import BotExports
-from .bot import Salamander
+from .bot import Salamander, Interaction
 from .utils import LRU
 
-settings_group = discord.app_commands.Group(name="settings", description="configure settings here")
+settings_group = discord.app_commands.Group(
+    name="settings",
+    description="configure settings here",
+)
 
 
 _user_tz_lru: LRU[int, str] = LRU(128)
@@ -44,15 +47,16 @@ def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
     return row[0]
 
 
-@settings_group.command(name="timezone", description="Set your timezone for time related functions")
-async def tz_set(itx: discord.Interaction[Salamander], zone: discord.app_commands.Range[str, 1, 70]) -> None:
+@settings_group.command(name="timezone", description="Set your timezone")
+async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70]):
+    send = itx.response.send_message
     if zone == "local":
-        await itx.response.send_message("Invalid timezone: %s" % zone, ephemeral=True)
+        await send("Invalid timezone: %s" % zone, ephemeral=True)
         return
     try:
         pytz.timezone(zone)
     except pytz.UnknownTimeZoneError:
-        await itx.response.send_message("Invalid timezone: %s" % zone, ephemeral=True)
+        await send("Invalid timezone: %s" % zone, ephemeral=True)
     else:
         conn: apsw.Connection = itx.client.conn
         cursor = conn.cursor()
@@ -79,14 +83,15 @@ def closest_zones(current: str) -> list[str]:
 
     common_zones = pytz.common_timezones_set
 
-    zone_matches = {z for z in common_zones if z.casefold().startswith(current.casefold())}
+    c_insensitive = current.casefold()
+    zone_matches = {z for z in common_zones if z.casefold().startswith(c_insensitive)}
     if len(zone_matches) > 25:
         return [*sorted(zone_matches)][:25]
     return list(zone_matches)
 
 
 @tz_set.autocomplete("zone")
-async def zone_ac(itx: discord.Interaction[Salamander], current: str) -> list[discord.app_commands.Choice[str]]:
+async def zone_ac(itx: Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=x, value=x) for x in closest_zones(current)]
 
 

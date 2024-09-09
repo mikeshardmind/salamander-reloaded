@@ -8,56 +8,50 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-import discord
-from discord import app_commands
+from discord.app_commands import Group, Range
 
 from ._type_stuff import BotExports
-from .bot import Salamander
+from .bot import Interaction
 from .dicemath import DiceError, Expression
 
-dice_group = app_commands.Group(name="dice", description="Keep rolling")
+dice_group = Group(name="dice", description="Keep rolling")
+
+type Expr = Range[str, 0, 500]
 
 
 @dice_group.command(name="roll")
-async def roll(
-    itx: discord.Interaction[Salamander],
-    expression: app_commands.Range[str, 0, 500],
-    secret: bool = False,
-) -> None:
+async def roll(itx: Interaction, expression: Expr, secret: bool = False):
     """Roll some dice"""
-
+    send = itx.response.send_message
     try:
         ex = Expression.from_str(expression)
         msg = ex.verbose_roll2()
     except ZeroDivisionError:
-        await itx.response.send_message("Oops, too many dice. I dropped them", ephemeral=True)
+        await send("Oops, too many dice. I dropped them", ephemeral=True)
     except DiceError as err:
-        await itx.response.send_message(f"{err}", ephemeral=True)
+        await send(f"{err}", ephemeral=True)
     else:
         msg = f"\N{GAME DIE}\n```\n{msg}\n```"
-        await itx.response.send_message(msg, ephemeral=secret)
+        await send(msg, ephemeral=secret)
 
 
 @dice_group.command(name="info")
-async def rverb(
-    itx: discord.Interaction[Salamander],
-    expression: app_commands.Range[str, 0, 500],
-    secret: bool = False,
-) -> None:
+async def rverb(itx: Interaction, expression: Expr, secret: bool = False):
     """
     Get info about an expression
     """
-
+    send = itx.response.send_message
     try:
         ex = Expression.from_str(expression)
         low, high, ev = ex.get_min(), ex.get_max(), ex.get_ev()
     except ZeroDivisionError:
-        return await itx.response.send_message("Oops, too many dice. I dropped them", ephemeral=True)
+        return await send("Oops, too many dice. I dropped them", ephemeral=True)
     except DiceError as err:
-        return await itx.response.send_message(f"{err}", ephemeral=True)
+        return await send(f"{err}", ephemeral=True)
 
-    return await itx.response.send_message(
-        f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}",
+    return await send(
+        f"Information about dice Expression: "
+        f"{ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}",
         ephemeral=secret,
     )
 

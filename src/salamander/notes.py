@@ -17,7 +17,7 @@ from base2048 import decode
 from discord import app_commands
 
 from ._type_stuff import BotExports, DynButton
-from .bot import Salamander
+from .bot import Interaction
 from .utils import LRU, b2048pack
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
@@ -41,13 +41,13 @@ class NoteModal(discord.ui.Modal):
         custom_id: str = "",
         target_id: int,
         author_id: int,
-    ) -> None:
+    ):
         disc_safe = b2048pack((author_id, target_id))
         custom_id = f"m:note:{disc_safe}"
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
+    async def raw_submit(interaction: Interaction, conn: apsw.Connection, data: str):
         packed = decode(data)
         author_id, target_id = msgspec.msgpack.decode(packed, type=tuple[int, int])
         assert interaction.data
@@ -116,7 +116,9 @@ def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple
 
 class NotesView:
     @staticmethod
-    def index_setup(items: tuple[str, ...], index: int) -> tuple[discord.Embed, bool, bool, bool, str]:
+    def index_setup(
+        items: tuple[str, ...], index: int
+    ) -> tuple[discord.Embed, bool, bool, bool, str]:
         ln = len(items)
         index %= ln
         content, ts = items[index]
@@ -124,25 +126,35 @@ class NotesView:
         first_disabled = index == 0
         last_disabled = index == ln - 1
         prev_next_disabled = ln == 1
-        return discord.Embed(description=content, timestamp=dt), first_disabled, last_disabled, prev_next_disabled, ts
+        return (
+            discord.Embed(description=content, timestamp=dt),
+            first_disabled,
+            last_disabled,
+            prev_next_disabled,
+            ts,
+        )
 
     @classmethod
     async def start(
-        cls, itx: discord.Interaction[Salamander], conn: apsw.Connection, user_id: int, target_id: int
-    ) -> None:
+        cls,
+        itx: Interaction,
+        conn: apsw.Connection,
+        user_id: int,
+        target_id: int,
+    ):
         await cls.edit_to_current_index(itx, conn, user_id, target_id, 0, first=True)
 
     @classmethod
     async def edit_to_current_index(
         cls,
-        itx: discord.Interaction,
+        itx: Interaction,
         conn: apsw.Connection,
         user_id: int,
         target_id: int,
         index: int,
         first: bool = False,
         use_followup: bool = False,
-    ) -> None:
+    ):
         _l = get_user_notes(conn, user_id, target_id)
 
         send = itx.followup.send if use_followup else itx.response.send_message
@@ -152,23 +164,27 @@ class NotesView:
             if first:
                 await send("You have no saved notes for this user.", ephemeral=True)
             else:
-                await edit(content="You no longer have any saved noted for this user.", view=None, embed=None)
+                await edit(
+                    content="You no longer have any saved noted for this user.",
+                    view=None,
+                    embed=None,
+                )
             return
 
-        element, first_disabled, last_disabled, prev_next_disabled, ts = cls.index_setup(_l, index)
+        element, f_disabled, l_disabled, single, ts = cls.index_setup(_l, index)
 
         v = discord.ui.View(timeout=4)
 
         c_id = "b:note:" + b2048pack(("first", user_id, target_id, 0, ts))
-        v.add_item(DynButton(label="<<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=first_disabled))
+        v.add_item(DynButton(label="<<", custom_id=c_id, disabled=f_disabled))
         c_id = "b:note:" + b2048pack(("previous", user_id, target_id, index - 1, ts))
-        v.add_item(DynButton(label="<", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=prev_next_disabled))
+        v.add_item(DynButton(label="<", custom_id=c_id, disabled=single))
         c_id = "b:note:" + b2048pack(("delete", user_id, target_id, index, ts))
         v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
         c_id = "b:note:" + b2048pack(("next", user_id, target_id, index + 1, ts))
-        v.add_item(DynButton(label=">", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=prev_next_disabled))
+        v.add_item(DynButton(label=">", custom_id=c_id, disabled=single))
         c_id = "b:note:" + b2048pack(("last", user_id, target_id, len(_l) - 1, ts))
-        v.add_item(DynButton(label=">>", style=discord.ButtonStyle.gray, custom_id=c_id, disabled=last_disabled))
+        v.add_item(DynButton(label=">>", custom_id=c_id, disabled=l_disabled))
 
         if first:
             await send(embed=element, view=v, ephemeral=True)
@@ -176,8 +192,10 @@ class NotesView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: discord.Interaction[Salamander], conn: apsw.Connection, data: str) -> None:
-        action, user_id, target_id, idx, ts = msgspec.msgpack.decode(decode(data), type=tuple[str, int, int, int, str])
+    async def raw_submit(cls, interaction: Interaction, conn: apsw.Connection, data: str):
+        action, user_id, target_id, idx, ts = msgspec.msgpack.decode(
+            decode(data), type=tuple[str, int, int, int, str]
+        )
         if interaction.user.id != user_id:
             return
 
@@ -194,17 +212,19 @@ class NotesView:
                     (user_id, target_id, ts),
                 )
 
-        await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx, use_followup=True)
+        await cls.edit_to_current_index(
+            interaction, conn, user_id, target_id, idx, use_followup=True
+        )
 
 
 @app_commands.context_menu(name="Add note")
-async def add_note_ctx(itx: discord.Interaction[Salamander], user: discord.Member | discord.User) -> None:
+async def add_note_ctx(itx: Interaction, user: discord.Member | discord.User):
     modal = NoteModal(target_id=user.id, author_id=itx.user.id)
     await itx.response.send_modal(modal)
 
 
 @app_commands.context_menu(name="Get notes")
-async def get_note_ctx(itx: discord.Interaction[Salamander], user: discord.Member | discord.User) -> None:
+async def get_note_ctx(itx: Interaction, user: discord.Member | discord.User):
     menu = NotesView()
     await menu.start(itx, itx.client.conn, itx.user.id, user.id)
 

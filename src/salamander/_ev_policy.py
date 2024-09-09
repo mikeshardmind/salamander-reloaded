@@ -10,18 +10,19 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import TYPE_CHECKING
+
+TYPE_CHECKING = False
 
 if TYPE_CHECKING:
 
-    def get_event_loop_policy() -> type[asyncio.AbstractEventLoopPolicy]:
-        # moving a typing based *Accurate statement* here because pyright is dumb
+    def get_event_loop_policy() -> asyncio.AbstractEventLoopPolicy:
+        # pyright chokes on the platform specific things below
         ...
 
 else:
 
-    def get_event_loop_policy() -> type[asyncio.AbstractEventLoopPolicy]:
-        policy: type[asyncio.AbstractEventLoopPolicy] = asyncio.DefaultEventLoopPolicy
+    def get_event_loop_policy() -> asyncio.AbstractEventLoopPolicy:
+        policy = asyncio.DefaultEventLoopPolicy
 
         if sys.platform in ("win32", "cygwin", "cli"):
             try:
@@ -39,4 +40,4 @@ else:
             else:
                 policy = uvloop.EventLoopPolicy
 
-        return policy
+        return policy()

@@ -19,6 +19,7 @@ import discord
 import msgspec
 import scheduler
 import xxhash
+from discord import InteractionType, app_commands
 
 from ._type_stuff import HasExports, RawSubmittable, Reminder
 from .utils import LRU, platformdir_stuff, resolve_path_with_links
@@ -26,23 +27,44 @@ from .utils import LRU, platformdir_stuff, resolve_path_with_links
 log = logging.getLogger(__name__)
 
 
-class VersionableTree(discord.app_commands.CommandTree["Salamander"]):
-    async def interaction_check(self, interaction: discord.Interaction[Salamander]) -> bool:
+type Interaction = discord.Interaction[Salamander]
+
+
+class VersionableTree(app_commands.CommandTree["Salamander"]):
+    @classmethod
+    def from_salamander(cls: type[Self], client: Salamander) -> Self:
+        installs = app_commands.AppInstallationType(user=True, guild=False)
+        contexts = app_commands.AppCommandContext(
+            dm_channel=True, guild=True, private_channel=True
+        )
+        return cls(
+            client,
+            fallback_to_global=False,
+            allowed_contexts=contexts,
+            allowed_installs=installs,
+        )
+
+    async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.client.is_blocked(interaction.user.id):
-            if interaction.type is discord.InteractionType.application_command:
-                # We're not allowed to defer without thinking and ghost them, thanks discord! /s
-                await interaction.response.send_message("blocked, go away", ephemeral=True)
+            resp = interaction.response
+            if interaction.type is InteractionType.application_command:
+                await resp.send_message("blocked, go away", ephemeral=True)
             else:
-                await interaction.response.defer(ephemeral=True)
+                await resp.defer(ephemeral=True)
             return False
         return True
 
-    async def get_hash(self, tree: discord.app_commands.CommandTree) -> bytes:
-        commands = sorted(self._get_all_commands(guild=None), key=lambda c: c.qualified_name)
+    async def get_hash(self, tree: app_commands.CommandTree) -> bytes:
+        commands = sorted(
+            self._get_all_commands(guild=None),
+            key=lambda c: c.qualified_name,
+        )
 
         translator = self.translator
         if translator:
-            payload = [await command.get_translated_payload(tree, translator) for command in commands]
+            payload = [
+                await command.get_translated_payload(tree, translator) for command in commands
+            ]
         else:
             payload = [command.to_dict(tree) for command in commands]
 
@@ -63,25 +85,20 @@ class Salamander(discord.AutoShardedClient):
         conn: apsw.Connection,
         initial_exts: list[HasExports],
         **kwargs: Any,
-    ) -> None:
+    ):
         super().__init__(*args, intents=intents, **kwargs)
         self.raw_modal_submits: dict[str, RawSubmittable] = {}
         self.raw_button_submits: dict[str, RawSubmittable] = {}
-        self.tree = VersionableTree(
-            self,
-            fallback_to_global=False,
-            allowed_contexts=discord.app_commands.AppCommandContext(dm_channel=True, guild=True, private_channel=True),
-            allowed_installs=discord.app_commands.AppInstallationType(user=True, guild=False),
-        )
+        self.tree = VersionableTree.from_salamander(self)
         self.conn: apsw.Connection = conn
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
 
-    async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
+    async def on_interaction(self, interaction: discord.Interaction[Self]):
         for typ, regex, mapping in (
-            (discord.InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
-            (discord.InteractionType.component, button_regex, self.raw_button_submits),
+            (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
+            (InteractionType.component, button_regex, self.raw_button_submits),
         ):
             if interaction.type is typ:
                 assert interaction.data is not None
@@ -91,7 +108,7 @@ class Salamander(discord.AutoShardedClient):
                     if rs := mapping.get(modal_name):
                         await rs.raw_submit(interaction, self.conn, data)
 
-    def set_blocked(self, user_id: int, blocked: bool) -> None:
+    def set_blocked(self, user_id: int, blocked: bool):
         self.block_cache[user_id] = blocked
         with self.conn:
             cursor = self.conn.cursor()
@@ -115,22 +132,18 @@ class Salamander(discord.AutoShardedClient):
         row = cursor.execute(
             """
             SELECT EXISTS (
-                SELECT 1 FROM discord_users WHERE user_id=? AND is_blocked LIMIT 1
+                SELECT 1 FROM discord_users
+                WHERE user_id=? AND is_blocked LIMIT 1
             );
             """,
             (user_id,),
         ).fetchone()
-        assert row is not None, "SELECT EXISTS top level query is always going to have a result..."
+        assert row is not None, "SELECT EXISTS top level query"
         b: bool = row[0]
         self.block_cache[user_id] = b
         return b
 
-    async def setup_hook(self) -> None:
-        from datetime import timedelta
-
-        t = discord.utils.utcnow() + timedelta(minutes=1)
-        fmt = t.strftime(r"%Y-%m-%d %H:%M")
-        await self.sched.schedule_event(dispatch_name="test", dispatch_time=fmt, dispatch_zone="UTC")
+    async def setup_hook(self):
         self.sched.start_dispatch_to_bot(self)
 
         for mod in self.initial_exts:
@@ -159,33 +172,44 @@ class Salamander(discord.AutoShardedClient):
         *,
         reconnect: bool = True,
         scheduler: scheduler.DiscordBotScheduler = _missing,
-    ) -> None:
+    ):
         if scheduler is _missing:
             msg = "Must provide a valid scheudler instance"
             raise RuntimeError(msg)
         self.sched = scheduler
         return await super().start(token, reconnect=reconnect)
 
-    async def close(self) -> None:
+    async def close(self):
         await self.sched.stop_gracefully()
         return await super().close()
 
-    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
+    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch):
         user_id = event.associated_user
         reminder = event.unpack_extra(Reminder)
         if reminder and user_id:
-            embed = discord.Embed(description=reminder.content, title="Your requested reminder")
-            embed.add_field(name="Jump to around where you created this reminder", value=reminder.context)
+            embed = discord.Embed(
+                description=reminder.content,
+                title="Your requested reminder",
+            )
+            embed.add_field(
+                name="Jump to around where you created this reminder",
+                value=reminder.context,
+            )
 
             unrecoverable_fail = False
+            user_obj = discord.Object(user_id, type=discord.User)
             try:
-                channel = await self.create_dm(discord.Object(user_id, type=discord.User))
+                channel = await self.create_dm(user_obj)
                 await channel.send(embed=embed)
             except (discord.NotFound, discord.Forbidden):
                 # assume user doesn't exist or removed the app
                 unrecoverable_fail = True
             except discord.HTTPException as exc:
-                logging.exception("Could not handle reminder %r due to exception", event, exc_info=exc)
+                logging.exception(
+                    "Could not handle reminder %r due to exception",
+                    event,
+                    exc_info=exc,
+                )
 
             if reminder.recur and not unrecoverable_fail:
                 delta = {

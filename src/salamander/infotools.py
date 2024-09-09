@@ -13,7 +13,7 @@ import io
 import discord
 
 from ._type_stuff import BotExports
-from .bot import Salamander
+from .bot import Interaction
 
 
 def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
@@ -26,26 +26,27 @@ def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
 
 
 @discord.app_commands.context_menu(name="Avatar")
-async def user_avatar(itx: discord.Interaction[Salamander], user: discord.User | discord.Member) -> None:
+async def user_avatar(itx: Interaction, user: discord.User | discord.Member):
     await itx.response.send_message(embed=embed_from_user(user), ephemeral=True)
 
 
 @discord.app_commands.context_menu(name="Raw Content")
-async def raw_content(itx: discord.Interaction, message: discord.Message) -> None:
+async def raw_content(itx: Interaction, message: discord.Message):
+    send = itx.response.send_message
     c = message.content
     if not c:
-        await itx.response.send_message("No content", ephemeral=True)
+        await send("No content", ephemeral=True)
         return
 
     if len(c) < 1000:
         escaped = discord.utils.escape_markdown(c)
         if len(escaped) < 1500:
             embed = discord.Embed(description=f"```\n{escaped}\n```")
-            await itx.response.send_message(embed=embed, ephemeral=True)
+            await send(embed=embed, ephemeral=True)
             return
 
-    b = io.BytesIO(c.encode())
-    await itx.response.send_message(content="Attached long raw content", ephemeral=True, file=discord.File(b))
+    f = discord.File(io.BytesIO(c.encode()))
+    await send(content="Attached long raw content", ephemeral=True, file=f)
 
 
 exports = BotExports([user_avatar, raw_content])

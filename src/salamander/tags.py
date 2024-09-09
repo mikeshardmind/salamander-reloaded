@@ -45,7 +45,7 @@ class TagModal(discord.ui.Modal):
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: Interaction, conn: Connection, data: str):
+    async def raw_submit(interaction: Interaction, data: str):
         cursor = interaction.client.conn.cursor()
         packed = decode(data)
         author_id, tag_name = msgpack.decode(packed, type=tuple[int, str])

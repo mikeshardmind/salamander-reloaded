@@ -47,7 +47,7 @@ class NoteModal(discord.ui.Modal):
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: Interaction, conn: apsw.Connection, data: str):
+    async def raw_submit(interaction: Interaction, data: str):
         packed = decode(data)
         author_id, target_id = msgspec.msgpack.decode(packed, type=tuple[int, int])
         assert interaction.data
@@ -62,6 +62,8 @@ class NoteModal(discord.ui.Modal):
         content = modal_components[0]["value"]
 
         await interaction.response.defer(ephemeral=True)
+
+        conn = interaction.client.conn
 
         with conn:
             cursor = conn.cursor()
@@ -192,7 +194,8 @@ class NotesView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: Interaction, conn: apsw.Connection, data: str):
+    async def raw_submit(cls, interaction: Interaction, data: str):
+        conn = interaction.client.conn
         action, user_id, target_id, idx, ts = msgspec.msgpack.decode(
             decode(data), type=tuple[str, int, int, int, str]
         )

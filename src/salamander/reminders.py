@@ -10,13 +10,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-import apsw
 import discord
 import pytz
 from scheduler import DiscordBotScheduler, ScheduledDispatch
 
 from ._type_stuff import BotExports, DynButton, Reminder
-from .bot import Salamander, Interaction
+from .bot import Interaction
 from .settings_commands import get_user_tz
 from .utils import b2048pack, b2048unpack
 
@@ -98,7 +97,7 @@ class ReminderView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: Interaction, conn: apsw.Connection, data: str):
+    async def raw_submit(cls, interaction: Interaction, data: str):
         action, user_id, idx, tid = b2048unpack(data, tuple[str, int, int, str])
         if interaction.user.id != user_id:
             return

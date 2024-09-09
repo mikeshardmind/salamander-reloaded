@@ -106,7 +106,7 @@ class Salamander(discord.AutoShardedClient):
                 if match := regex.match(custom_id):
                     modal_name, data = match.groups()
                     if rs := mapping.get(modal_name):
-                        await rs.raw_submit(interaction, self.conn, data)
+                        await rs.raw_submit(interaction, data)
 
     def set_blocked(self, user_id: int, blocked: bool):
         self.block_cache[user_id] = blocked

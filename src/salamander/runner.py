@@ -32,7 +32,6 @@ import discord
 import scheduler
 import truststore
 
-from ._ev_policy import get_event_loop_policy
 from ._type_stuff import HasExports
 from .utils import platformdir_stuff, resolve_path_with_links
 
@@ -128,9 +127,6 @@ def with_logging() -> Generator[None]:
 def run_bot() -> None:
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
-
-    policy = get_event_loop_policy()
-    asyncio.set_event_loop_policy(policy)
 
     loop = asyncio.new_event_loop()
     loop.set_task_factory(asyncio.eager_task_factory)

@@ -45,7 +45,7 @@ class TagModal(discord.ui.Modal):
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: Interaction, data: str):
+    async def raw_submit(interaction: Interaction, data: str) -> None:
         cursor = interaction.client.conn.cursor()
         packed = decode(data)
         author_id, tag_name = msgpack.decode(packed, type=tuple[int, str])
@@ -80,14 +80,14 @@ class TagModal(discord.ui.Modal):
 
 
 @tag_group.command(name="create")
-async def user_tag_create(itx: Interaction, name: Range[str, 1, 20]):
+async def user_tag_create(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Creates or replaces tag content"""
     modal = TagModal(tag_name=name, author_id=itx.user.id)
     await itx.response.send_modal(modal)
 
 
 @tag_group.command(name="get")
-async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]):
+async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Get some content"""
     cursor = itx.client.conn.cursor()
     row = cursor.execute(
@@ -106,7 +106,7 @@ async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]):
 
 
 @tag_group.command(name="delete")
-async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]):
+async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Delete a tag."""
     await itx.response.defer(ephemeral=True)
     conn: Connection = itx.client.conn

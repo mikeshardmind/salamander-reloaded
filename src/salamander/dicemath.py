@@ -234,7 +234,7 @@ class Expression:
     def __str__(self):
         return " ".join(map(_die_or_component_fmt, self._components))
 
-    def add_dice(self, die: NumberofDice | int):
+    def add_dice(self, die: NumberofDice | int) -> None:
         if len(self._components) % 2:
             msg = f"Expected an operator next (Current: {self})"
             raise DiceError(msg)
@@ -248,7 +248,7 @@ class Expression:
 
         self._components.append(die)
 
-    def add_operator(self, op: OperatorType):
+    def add_operator(self, op: OperatorType) -> None:
         if not len(self._components) % 2:
             msg = f"Expected a number or die next (Current: {self}"
             raise DiceError(msg)

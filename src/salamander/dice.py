@@ -20,7 +20,7 @@ type Expr = Range[str, 0, 500]
 
 
 @dice_group.command(name="roll")
-async def roll(itx: Interaction, expression: Expr, secret: bool = False):
+async def roll(itx: Interaction, expression: Expr, secret: bool = False) -> None:
     """Roll some dice"""
     send = itx.response.send_message
     try:
@@ -36,7 +36,7 @@ async def roll(itx: Interaction, expression: Expr, secret: bool = False):
 
 
 @dice_group.command(name="info")
-async def rverb(itx: Interaction, expression: Expr, secret: bool = False):
+async def rverb(itx: Interaction, expression: Expr, secret: bool = False) -> None:
     """
     Get info about an expression
     """

@@ -7,11 +7,10 @@ target-version = "py312"
 select = [
     "F", "E", "I", "UP", "YTT", "S", "BLE", "B", "A", "COM", "C4", "DTZ",
     "EM", "ISC", "G", "INP", "PIE", "T20", "Q003", "RSE", "RET", "SIM", "TID", "PTH",
-    "ERA", "PD", "PLC", "PLE", "PLR", "PLW", "TRY", "NPY", "RUF", "ASYNC",
+    "ERA", "PD", "PLC", "PLE", "PLR", "PLW", "TRY", "NPY", "RUF", "ASYNC", "ANN",
 ]
 ignore = [
     "S311",
-    "ANN",  # let type checkers handle this.
     "RUF001",  # ambiguous characters not something I want to enforce here.
     "G002",  # erroneous issue with %-logging when logging can be confiured for % logging
     "S101",  # use of assert here is a known quantity, blame typing memes

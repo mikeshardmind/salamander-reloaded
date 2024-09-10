@@ -47,7 +47,7 @@ class NoteModal(discord.ui.Modal):
         super().__init__(title=title, timeout=10, custom_id=custom_id)
 
     @staticmethod
-    async def raw_submit(interaction: Interaction, data: str):
+    async def raw_submit(interaction: Interaction, data: str) -> None:
         packed = decode(data)
         author_id, target_id = msgspec.msgpack.decode(packed, type=tuple[int, int])
         assert interaction.data
@@ -143,7 +143,7 @@ class NotesView:
         conn: apsw.Connection,
         user_id: int,
         target_id: int,
-    ):
+    ) -> None:
         await cls.edit_to_current_index(itx, conn, user_id, target_id, 0, first=True)
 
     @classmethod
@@ -156,7 +156,7 @@ class NotesView:
         index: int,
         first: bool = False,
         use_followup: bool = False,
-    ):
+    ) -> None:
         _l = get_user_notes(conn, user_id, target_id)
 
         send = itx.followup.send if use_followup else itx.response.send_message
@@ -194,7 +194,7 @@ class NotesView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: Interaction, data: str):
+    async def raw_submit(cls, interaction: Interaction, data: str) -> None:
         conn = interaction.client.conn
         action, user_id, target_id, idx, ts = msgspec.msgpack.decode(
             decode(data), type=tuple[str, int, int, int, str]
@@ -221,13 +221,13 @@ class NotesView:
 
 
 @app_commands.context_menu(name="Add note")
-async def add_note_ctx(itx: Interaction, user: discord.Member | discord.User):
+async def add_note_ctx(itx: Interaction, user: discord.Member | discord.User) -> None:
     modal = NoteModal(target_id=user.id, author_id=itx.user.id)
     await itx.response.send_modal(modal)
 
 
 @app_commands.context_menu(name="Get notes")
-async def get_note_ctx(itx: Interaction, user: discord.Member | discord.User):
+async def get_note_ctx(itx: Interaction, user: discord.Member | discord.User) -> None:
     menu = NotesView()
     await menu.start(itx, itx.client.conn, itx.user.id, user.id)
 

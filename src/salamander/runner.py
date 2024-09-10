@@ -66,7 +66,7 @@ def _get_token() -> str:
     return token
 
 
-def run_setup():
+def run_setup() -> None:
     prompt = (
         "Paste the discord token you'd like to use for this bot here"
         "(won't be visible) then press enter. "
@@ -125,7 +125,7 @@ def with_logging() -> Generator[None]:
         q_listener.stop()
 
 
-def run_bot():
+def run_bot() -> None:
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
 
@@ -248,7 +248,7 @@ def run_bot():
     conn.pragma("optimize")
 
 
-def ensure_schema():
+def ensure_schema() -> None:
     # The below is a hack of a solution, but it only runs against a trusted file
     # I don't want to have the schema repeated in multiple places
 
@@ -273,7 +273,7 @@ def ensure_schema():
         list(conn.execute(statement))
 
 
-def main():
+def main() -> None:
     os.umask(0o077)
     to_apply: tuple[Any, ...] = (
         apsw.bestpractice.connection_wal,

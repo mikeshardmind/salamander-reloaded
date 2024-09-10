@@ -50,7 +50,7 @@ class LRU(Generic[K, V]):
         if len(self.cache) > self.maxsize:
             self.cache.pop(next(iter(self.cache)))
 
-    def remove(self, key: K):
+    def remove(self, key: K) -> None:
         self.cache.pop(key, None)
 
 

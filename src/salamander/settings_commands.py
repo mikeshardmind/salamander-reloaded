@@ -13,7 +13,7 @@ import discord
 import pytz
 
 from ._type_stuff import BotExports
-from .bot import Salamander, Interaction
+from .bot import Interaction
 from .utils import LRU
 
 settings_group = discord.app_commands.Group(
@@ -48,7 +48,7 @@ def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
 
 
 @settings_group.command(name="timezone", description="Set your timezone")
-async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70]):
+async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70]) -> None:
     send = itx.response.send_message
     if zone == "local":
         await send("Invalid timezone: %s" % zone, ephemeral=True)

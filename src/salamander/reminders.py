@@ -48,7 +48,7 @@ class ReminderView:
         return embed, first_disabled, last_disabled, prev_next_disabled, item.task_id
 
     @classmethod
-    async def start(cls, itx: Interaction, user_id: int):
+    async def start(cls, itx: Interaction, user_id: int) -> None:
         await cls.edit_to_current_index(itx, user_id, 0, first=True)
 
     @classmethod
@@ -59,7 +59,7 @@ class ReminderView:
         index: int,
         first: bool = False,
         use_followup: bool = False,
-    ):
+    ) -> None:
         sched: DiscordBotScheduler = itx.client.sched
         _l = await sched.list_event_schedule_for_user("reminder", user_id)
 
@@ -97,7 +97,7 @@ class ReminderView:
             await edit(embed=element, view=v)
 
     @classmethod
-    async def raw_submit(cls, interaction: Interaction, data: str):
+    async def raw_submit(cls, interaction: Interaction, data: str) -> None:
         action, user_id, idx, tid = b2048unpack(data, tuple[str, int, int, str])
         if interaction.user.id != user_id:
             return
@@ -115,7 +115,7 @@ async def remind_in(
     hours: discord.app_commands.Range[int, 0, 72] = 0,
     minutes: discord.app_commands.Range[int, 0, 59] = 0,
     content: discord.app_commands.Range[str, 1, 1000] = "",
-):
+) -> None:
     sched: DiscordBotScheduler = itx.client.sched
     await itx.response.defer(ephemeral=True)
     # strategy here is based on a mix of factors
@@ -151,13 +151,13 @@ async def remind_in(
 
 
 # @reminder_group.command(name="at", description="remind at a specific time")
-async def remind_at(itx: Interaction):
+async def remind_at(itx: Interaction) -> None:
     ...
     # TODO: time parser
 
 
 @reminder_group.command(name="list", description="view and optionally remove your reminders.")
-async def reminder_list(itx: Interaction):
+async def reminder_list(itx: Interaction) -> None:
     await ReminderView.start(itx, itx.user.id)
 
 

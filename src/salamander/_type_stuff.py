@@ -57,7 +57,7 @@ class DeleteMemberDataFunc(Protocol):
 
 class RawSubmittableCls(Protocol):
     @classmethod
-    async def raw_submit(cls, interaction: DInter, data: str) -> Any:  ...
+    async def raw_submit(cls, interaction: DInter, data: str) -> Any: ...
 
 
 class GetUserDataFunc(Protocol):

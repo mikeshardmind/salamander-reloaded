@@ -95,7 +95,7 @@ class Salamander(discord.AutoShardedClient):
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
 
-    async def on_interaction(self, interaction: discord.Interaction[Self]):
+    async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
         for typ, regex, mapping in (
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
             (InteractionType.component, button_regex, self.raw_button_submits),
@@ -108,7 +108,7 @@ class Salamander(discord.AutoShardedClient):
                     if rs := mapping.get(modal_name):
                         await rs.raw_submit(interaction, data)
 
-    def set_blocked(self, user_id: int, blocked: bool):
+    def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
         with self.conn:
             cursor = self.conn.cursor()
@@ -143,7 +143,7 @@ class Salamander(discord.AutoShardedClient):
         self.block_cache[user_id] = b
         return b
 
-    async def setup_hook(self):
+    async def setup_hook(self) -> None:
         self.sched.start_dispatch_to_bot(self)
 
         for mod in self.initial_exts:
@@ -172,18 +172,18 @@ class Salamander(discord.AutoShardedClient):
         *,
         reconnect: bool = True,
         scheduler: scheduler.DiscordBotScheduler = _missing,
-    ):
+    ) -> None:
         if scheduler is _missing:
             msg = "Must provide a valid scheudler instance"
             raise RuntimeError(msg)
         self.sched = scheduler
         return await super().start(token, reconnect=reconnect)
 
-    async def close(self):
+    async def close(self) -> None:
         await self.sched.stop_gracefully()
         return await super().close()
 
-    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch):
+    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         user_id = event.associated_user
         reminder = event.unpack_extra(Reminder)
         if reminder and user_id:

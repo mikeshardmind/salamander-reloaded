@@ -177,18 +177,18 @@ class NumberofDice:
     def full_verbose_roll(self) -> tuple[int, str]:
         parts: list[str] = []
         choices = random.choices(range(1, self.sides + 1), k=self.quant)
-        inner_fmt = ', '.join(map(str, choices))
+        inner_fmt = ", ".join(map(str, choices))
         parts.append(f"{self.quant}d{self.sides} ({inner_fmt})")
         if self._kd_expr:
             if self.keep_high < self.quant:
                 choices.sort()
                 choices = choices[-self.keep_high :]
-                inner_fmt = ', '.join(map(str, choices))
+                inner_fmt = ", ".join(map(str, choices))
                 parts.append(f"-> Highest {self.keep_high} ({inner_fmt})")
             else:
                 choices.sort()
                 choices = choices[: self.keep_low]
-                inner_fmt = ', '.join(map(str, choices))
+                inner_fmt = ", ".join(map(str, choices))
                 parts.append(f"-> Lowest {self.keep_low} ({inner_fmt})")
 
         total = sum(choices)

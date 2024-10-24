@@ -18,6 +18,7 @@ import queue
 import signal
 import socket
 import ssl
+import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -124,6 +125,10 @@ def with_logging() -> Generator[None]:
         q_listener.stop()
 
 
+class SignaledExit(Exception):
+    pass
+
+
 def run_bot() -> None:
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
@@ -173,11 +178,21 @@ def run_bot() -> None:
                 if not client.is_closed():
                     await client.close()
 
-    try:
-        loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
-        loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
-    except NotImplementedError:
-        pass
+    if sys.platform == "win32":
+        # loop.add_signal_handler isn't implemented on windows event loops
+        def sig_handler(*_: Any):
+            loop.stop()
+            raise SignaledExit
+
+        signal.signal(signal.SIGINT, sig_handler)
+        signal.signal(signal.SIGTERM, sig_handler)
+
+    else:
+        try:
+            loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
+            loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
+        except NotImplementedError:
+            pass
 
     def stop_when_done(fut: asyncio.Future[None]):
         loop.stop()
@@ -186,8 +201,8 @@ def run_bot() -> None:
     try:
         fut.add_done_callback(stop_when_done)
         loop.run_forever()
-    except KeyboardInterrupt:
-        log.info("Shutting down via keyboard interrupt.")
+    except (KeyboardInterrupt, SignaledExit):
+        log.info("Shutting down")
     finally:
         fut.remove_done_callback(stop_when_done)
         if not client.is_closed():

@@ -8,62 +8,29 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-import argparse
 import asyncio
 import getpass
 import logging
-import logging.handlers
-import os
-import queue
 import signal
 import socket
 import ssl
-import sys
-from collections.abc import Generator
-from contextlib import contextmanager
+import threading
 from pathlib import Path
 from typing import Any
 
 import aiohttp
 import apsw
 import apsw.bestpractice
-import apsw.ext
-import base2048
 import discord
 import scheduler
 import truststore
+from async_utils.sig_service import SignalService
 
 from ._type_stuff import HasExports
-from .utils import platformdir_stuff, resolve_path_with_links
+from .logs import with_logging
+from .utils import get_token, platformdir_stuff, store_token
 
 log = logging.getLogger(__name__)
-
-
-def _get_stored_token() -> str | None:
-    token_file_path = platformdir_stuff.user_config_path / "salamander.token"
-    token_file_path = resolve_path_with_links(token_file_path)
-    with token_file_path.open(mode="r") as fp:
-        data = fp.read()
-        return base2048.decode(data).decode("utf-8") if data else None
-
-
-def _store_token(token: str, /):
-    token_file_path = platformdir_stuff.user_config_path / "salamander.token"
-    token_file_path = resolve_path_with_links(token_file_path)
-    with token_file_path.open(mode="w") as fp:
-        fp.write(base2048.encode(token.encode()))
-
-
-def _get_token() -> str:
-    # TODO: alternative token stores: systemdcreds, etc
-    token = os.getenv("SALAMANDER_TOKEN") or _get_stored_token()
-    if not token:
-        msg = (
-            "NO TOKEN? (Use Environment `SALAMANDER_TOKEN`"
-            "or launch with `--setup` to go through interactive setup)"
-        )
-        raise RuntimeError(msg) from None
-    return token
 
 
 def run_setup() -> None:
@@ -76,64 +43,13 @@ def run_setup() -> None:
     if not token:
         msg = "Not storing empty token"
         raise RuntimeError(msg)
-    _store_token(token)
+    store_token(token)
 
 
-class KnownWarningFilter(logging.Filter):
-    known_messages = (
-        "Guilds intent seems to be disabled. This may cause state related issues.",
-        "PyNaCl is not installed, voice will NOT be supported",
-    )
-
-    def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
-        return record.msg not in self.known_messages
-
-
-@contextmanager
-def with_logging() -> Generator[None]:
-    q: queue.SimpleQueue[Any] = queue.SimpleQueue()
-    q_handler = logging.handlers.QueueHandler(q)
-    q_handler.addFilter(KnownWarningFilter())
-    stream_h = logging.StreamHandler()
-
-    log_path = resolve_path_with_links(platformdir_stuff.user_log_path, folder=True)
-    log_loc = log_path / "salamander.log"
-    rotating_file_handler = logging.handlers.RotatingFileHandler(
-        log_loc, maxBytes=2_000_000, backupCount=5
-    )
-
-    # intentional, discord.py won't use the stream coloring if passed the queue handler
-    discord.utils.setup_logging(handler=stream_h)
-    discord.utils.setup_logging(handler=rotating_file_handler)
-
-    root_logger = logging.getLogger()
-    root_logger.removeHandler(stream_h)
-    root_logger.removeHandler(rotating_file_handler)
-
-    # add the queue listener for this
-    q_listener = logging.handlers.QueueListener(q, stream_h, rotating_file_handler)
-    root_logger.addHandler(q_handler)
-
-    # Add apsw sqlite log forwarding
-    apsw_log = logging.getLogger("apsw_forwarded")
-    apsw.ext.log_sqlite(logger=apsw_log)
-
-    try:
-        q_listener.start()
-        yield
-    finally:
-        q_listener.stop()
-
-
-class SignaledExit(Exception):
-    pass
-
-
-def run_bot() -> None:
+def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signals]) -> None:
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
 
-    loop = asyncio.new_event_loop()
     loop.set_task_factory(asyncio.eager_task_factory)
     asyncio.set_event_loop(loop)
 
@@ -169,30 +85,24 @@ def run_bot() -> None:
     )
     sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
 
-    async def entrypoint():
+    async def bot_entrypoint():
         async with sched:
             try:
                 async with client:
-                    await client.start(_get_token(), scheduler=sched)
+                    await client.start(get_token(), scheduler=sched)
             finally:
                 if not client.is_closed():
                     await client.close()
 
-    if sys.platform == "win32":
-        # loop.add_signal_handler isn't implemented on windows event loops
-        def sig_handler(*_: Any):
-            loop.stop()
-            raise SignaledExit
+    async def sig_handler():
+        sig = await queue.get()
+        log.info("Shutting down, recieved signal: %r", sig)
+        loop.call_soon(loop.stop)
 
-        signal.signal(signal.SIGINT, sig_handler)
-        signal.signal(signal.SIGTERM, sig_handler)
-
-    else:
-        try:
-            loop.add_signal_handler(signal.SIGINT, lambda: loop.stop())
-            loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
-        except NotImplementedError:
-            pass
+    async def entrypoint():
+        t1 = asyncio.create_task(bot_entrypoint())
+        t2 = asyncio.create_task(sig_handler())
+        await asyncio.gather(t1, t2)
 
     def stop_when_done(fut: asyncio.Future[None]):
         loop.stop()
@@ -201,13 +111,11 @@ def run_bot() -> None:
     try:
         fut.add_done_callback(stop_when_done)
         loop.run_forever()
-    except (KeyboardInterrupt, SignaledExit):
-        log.info("Shutting down")
     finally:
         fut.remove_done_callback(stop_when_done)
         if not client.is_closed():
             # give the client a brief opportunity to close
-            _close_task = loop.create_task(client.close())  # noqa: RUF006, loop is closed in this scope
+            _close_task = loop.create_task(client.close())
         loop.run_until_complete(asyncio.sleep(0.001))
 
         tasks: set[asyncio.Task[Any]] = {t for t in asyncio.all_tasks(loop) if not t.done()}
@@ -250,10 +158,7 @@ def run_bot() -> None:
         loop.close()
 
         if not fut.cancelled():
-            try:
-                fut.result()
-            except KeyboardInterrupt:
-                pass
+            fut.result()
 
     conn.pragma("analysis_limit", 400)
     conn.pragma("optimize")
@@ -284,8 +189,7 @@ def ensure_schema() -> None:
         list(conn.execute(statement))
 
 
-def main() -> None:
-    os.umask(0o077)
+def run_bot() -> None:
     to_apply: tuple[Any, ...] = (
         apsw.bestpractice.connection_wal,
         apsw.bestpractice.connection_busy_timeout,
@@ -293,32 +197,19 @@ def main() -> None:
         apsw.bestpractice.connection_dqs,
     )
     apsw.bestpractice.apply(to_apply)  # pyright: ignore[reportUnknownMemberType]
-    parser = argparse.ArgumentParser(description="Small suite of user installable tools")
-    excl_setup = parser.add_mutually_exclusive_group()
-    excl_setup.add_argument(
-        "--setup",
-        action="store_true",
-        default=False,
-        help="Run interactive setup.",
-        dest="isetup",
-    )
-    excl_setup.add_argument(
-        "--set-token-to",
-        default=None,
-        dest="token",
-        help="Provide a token directly to be stored for use.",
-    )
-    args = parser.parse_args()
 
-    if args.isetup:
-        run_setup()
-    elif args.token:
-        _store_token(args.token)
-    else:
-        with with_logging():
-            ensure_schema()
-            run_bot()
+    with with_logging():
+        loop = asyncio.new_event_loop()
+        queue: asyncio.Queue[signal.Signals] = asyncio.Queue()
+        bot_thread = threading.Thread(target=_run_bot, args=(loop, queue))
 
+        def _stop_loop_on_signal(s: signal.Signals):
+            loop.call_soon_threadsafe(queue.put_nowait, s)
 
-if __name__ == "__main__":
-    main()
+        signal_service = SignalService(
+            startup=[ensure_schema, bot_thread.start],
+            signal_cbs=[_stop_loop_on_signal],
+            joins=[bot_thread.join],
+        )
+
+        signal_service.run()

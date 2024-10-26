@@ -8,18 +8,47 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 import msgspec
 import platformdirs
+from async_utils.task_cache import LRU
 from base2048 import decode, encode
 
 platformdir_stuff = platformdirs.PlatformDirs("salamander", "mikeshardmind", roaming=False)
 
-K = TypeVar("K")
-V = TypeVar("V")
 T = TypeVar("T")
+
+__all__ = ["LRU", "b2048pack", "b2048unpack", "resolve_path_with_links"]
+
+
+def _get_stored_token() -> str | None:
+    token_file_path = platformdir_stuff.user_config_path / "salamander.token"
+    token_file_path = resolve_path_with_links(token_file_path)
+    with token_file_path.open(mode="r") as fp:
+        data = fp.read()
+        return decode(data).decode("utf-8") if data else None
+
+
+def store_token(token: str, /):
+    token_file_path = platformdir_stuff.user_config_path / "salamander.token"
+    token_file_path = resolve_path_with_links(token_file_path)
+    with token_file_path.open(mode="w") as fp:
+        fp.write(encode(token.encode()))
+
+
+def get_token() -> str:
+    # TODO: alternative token stores: systemdcreds, etc
+    token = os.getenv("SALAMANDER_TOKEN") or _get_stored_token()
+    if not token:
+        msg = (
+            "NO TOKEN? (Use Environment `SALAMANDER_TOKEN`"
+            "or launch with `--setup` to go through interactive setup)"
+        )
+        raise RuntimeError(msg) from None
+    return token
 
 
 def b2048pack(obj: object, /) -> str:
@@ -28,30 +57,6 @@ def b2048pack(obj: object, /) -> str:
 
 def b2048unpack(packed: str, typ: type[T], /) -> T:
     return msgspec.msgpack.decode(decode(packed), type=typ)
-
-
-class LRU(Generic[K, V]):
-    def __init__(self, maxsize: int, /):
-        self.cache: dict[K, V] = {}
-        self.maxsize = maxsize
-
-    def get(self, key: K, default: T, /) -> V | T:
-        if key not in self.cache:
-            return default
-        self.cache[key] = self.cache.pop(key)
-        return self.cache[key]
-
-    def __getitem__(self, key: K, /) -> V:
-        self.cache[key] = self.cache.pop(key)
-        return self.cache[key]
-
-    def __setitem__(self, key: K, value: V, /):
-        self.cache[key] = value
-        if len(self.cache) > self.maxsize:
-            self.cache.pop(next(iter(self.cache)))
-
-    def remove(self, key: K) -> None:
-        self.cache.pop(key, None)
 
 
 def resolve_path_with_links(path: Path, folder: bool = False) -> Path:

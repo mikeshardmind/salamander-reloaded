@@ -94,6 +94,7 @@ class Salamander(discord.AutoShardedClient):
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
+        self._is_closing: bool = False
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
         for typ, regex, mapping in (
@@ -144,7 +145,7 @@ class Salamander(discord.AutoShardedClient):
         return b
 
     async def setup_hook(self) -> None:
-        self.sched.start_dispatch_to_bot(self)
+        self.sched.start_dispatch_to_bot(self, redispatch_fetched_first=True)
 
         for mod in self.initial_exts:
             exports = mod.exports
@@ -180,12 +181,21 @@ class Salamander(discord.AutoShardedClient):
         return await super().start(token, reconnect=reconnect)
 
     async def close(self) -> None:
+        self._is_closing = True
         await self.sched.stop_gracefully()
         return await super().close()
 
     async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
+        if self._is_closing:
+            return
+
         user_id = event.associated_user
         reminder = event.unpack_extra(Reminder)
+
+        if not (reminder and user_id):
+            await self.sched.task_done(event)
+            return
+
         if reminder and user_id:
             embed = discord.Embed(
                 description=reminder.content,
@@ -210,6 +220,8 @@ class Salamander(discord.AutoShardedClient):
                     event,
                     exc_info=exc,
                 )
+
+            await self.sched.task_done(event)
 
             if reminder.recur and not unrecoverable_fail:
                 delta = {

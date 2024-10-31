@@ -220,11 +220,11 @@ files = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5122+gbf6ff74d"
+version = "2.5.0a5126+g63e9f559"
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "bf6ff74d7b74abd990bec60e4e02ecade70828b5"
+revision = "63e9f55976de8709844c0f6446d55f5e68f15194"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 dependencies = [
@@ -234,12 +234,12 @@ dependencies = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5122"
+version = "2.5.0a5126"
 extras = ["speed"]
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "bf6ff74d7b74abd990bec60e4e02ecade70828b5"
+revision = "63e9f55976de8709844c0f6446d55f5e68f15194"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 dependencies = [
@@ -420,10 +420,10 @@ files = [
 
 [[package]]
 name = "scheduler"
-version = "2024.10.6"
+version = "2024.10.31"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "7ddd82c4a49c16c6179e7d511b74c9f7c2a2c561"
+revision = "dd0cf7b9b93e17f338a7049398410b2a74a8028c"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 dependencies = [

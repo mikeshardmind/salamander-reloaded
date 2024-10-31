@@ -226,4 +226,4 @@ def run_bot() -> None:
     # The only output to flushable streams is via logging which also flushes
     # before this point.
     # if this breaks anything, report what was broken as a problem, not this.
-    os._exit(0) # pyright: ignore[reportPrivateUsage]
+    os._exit(0)  # pyright: ignore[reportPrivateUsage]

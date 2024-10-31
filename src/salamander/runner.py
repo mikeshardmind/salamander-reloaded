@@ -191,6 +191,11 @@ def ensure_schema() -> None:
 
 
 def run_bot() -> None:
+    """Run the bot then exit the interpreter.
+    This function intentionally takes full control of the main thread
+    and purposes it for signal handling, constructing everything else
+    required in other threads with and without event loop use in those threads.
+    """
     to_apply: tuple[Any, ...] = (
         apsw.bestpractice.connection_wal,
         apsw.bestpractice.connection_busy_timeout,

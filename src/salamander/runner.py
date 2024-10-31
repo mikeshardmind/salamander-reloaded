@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import getpass
 import logging
+import os
 import signal
 import socket
 import ssl
@@ -213,3 +214,11 @@ def run_bot() -> None:
         )
 
         signal_service.run()
+
+    # If any library is creating threads implicitly that continue running in the
+    # background, we don't want to wait on them, and ideally will drop libraries
+    # that are found to do this. Same with atexit handlers.
+    # The only output to flushable streams is via logging which also flushes
+    # before this point.
+    # if this breaks anything, report what was broken as a problem, not this.
+    os._exit(0) # pyright: ignore[reportPrivateUsage]

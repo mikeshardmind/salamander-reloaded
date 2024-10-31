@@ -133,10 +133,10 @@ files = [
 
 [[package]]
 name = "async-utils"
-version = "7.0.0"
+version = "7.0.1"
 requires_python = ">=3.12.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "2f9a53059356aba0930c54f31cf46dc0d9bcab1c"
+revision = "61ea5cbe352c9ff382da7327fb1997b8a11d9d85"
 summary = "Various async utilities"
 groups = ["default"]
 
@@ -423,7 +423,7 @@ name = "scheduler"
 version = "2024.10.31"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "dd0cf7b9b93e17f338a7049398410b2a74a8028c"
+revision = "88557ab9ad6b28fe718b6e237c060e7ae8d37a8d"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 dependencies = [

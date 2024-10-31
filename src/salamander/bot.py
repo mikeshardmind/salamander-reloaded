@@ -8,9 +8,11 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import logging.handlers
 import re
+from collections.abc import Sequence
 from datetime import timedelta
 from typing import Any, Self
 
@@ -19,6 +21,7 @@ import discord
 import msgspec
 import scheduler
 import xxhash
+from async_utils.waterfall import Waterfall
 from discord import InteractionType, app_commands
 
 from ._type_stuff import HasExports, RawSubmittable, Reminder
@@ -28,6 +31,19 @@ log = logging.getLogger(__name__)
 
 
 type Interaction = discord.Interaction[Salamander]
+
+
+def _last_seen_update(conn: apsw.Connection, user_ids: Sequence[int]):
+    cursor = conn.cursor()
+    with conn:
+        cursor.executemany(
+            """
+            UPDATE discord_users
+            SET last_interaction = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+            """,
+            ((user_id,) for user_id in user_ids),
+        )
 
 
 class VersionableTree(app_commands.CommandTree["Salamander"]):
@@ -95,8 +111,13 @@ class Salamander(discord.AutoShardedClient):
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
         self._is_closing: bool = False
+        self._waterfall: Waterfall[int] = Waterfall(10, 100, self.update_last_seen)
+
+    async def update_last_seen(self, user_ids: Sequence[int], /) -> None:
+        await asyncio.to_thread(_last_seen_update, self.conn, user_ids)
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
+        self._waterfall.put(interaction.user.id)
         for typ, regex, mapping in (
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
             (InteractionType.component, button_regex, self.raw_button_submits),
@@ -174,6 +195,7 @@ class Salamander(discord.AutoShardedClient):
         reconnect: bool = True,
         scheduler: scheduler.DiscordBotScheduler = _missing,
     ) -> None:
+        self._waterfall.start()
         if scheduler is _missing:
             msg = "Must provide a valid scheudler instance"
             raise RuntimeError(msg)
@@ -183,7 +205,8 @@ class Salamander(discord.AutoShardedClient):
     async def close(self) -> None:
         self._is_closing = True
         await self.sched.stop_gracefully()
-        return await super().close()
+        await super().close()
+        await self._waterfall.stop(wait=True)
 
     async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         if self._is_closing:

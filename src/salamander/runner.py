@@ -25,7 +25,7 @@ import apsw.bestpractice
 import discord
 import scheduler
 import truststore
-from async_utils.sig_service import SignalService
+from async_utils.sig_service import SignalService, SpecialExit
 
 from ._type_stuff import HasExports
 from .logs import with_logging
@@ -84,7 +84,11 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
         connector=connector,
         initial_exts=inital_exts,
     )
-    sched = scheduler.DiscordBotScheduler(platformdir_stuff.user_data_path / "scheduled.db")
+
+    sched = scheduler.DiscordBotScheduler(
+        platformdir_stuff.user_data_path / "scheduled.db",
+        use_threads=True,
+    )
 
     async def bot_entrypoint():
         async with sched:
@@ -97,7 +101,8 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
 
     async def sig_handler():
         sig = await queue.get()
-        log.info("Shutting down, recieved signal: %r", sig)
+        if sig != SpecialExit.EXIT:
+            log.info("Shutting down, recieved signal: %r", sig)
         loop.call_soon(loop.stop)
 
     async def entrypoint():
@@ -165,6 +170,17 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
     conn.pragma("optimize")
 
 
+def _wrapped_run_bot(
+    loop: asyncio.AbstractEventLoop,
+    queue: asyncio.Queue[signal.Signals],
+    socket: socket.socket,
+):
+    try:
+        _run_bot(loop, queue)
+    finally:
+        socket.send(SpecialExit.EXIT.to_bytes())
+
+
 def ensure_schema() -> None:
     # The below is a hack of a solution, but it only runs against a trusted file
     # I don't want to have the schema repeated in multiple places
@@ -206,17 +222,20 @@ def run_bot() -> None:
 
     with with_logging():
         loop = asyncio.new_event_loop()
-        queue: asyncio.Queue[signal.Signals] = asyncio.Queue()
-        bot_thread = threading.Thread(target=_run_bot, args=(loop, queue))
+        queue: asyncio.Queue[signal.Signals | SpecialExit] = asyncio.Queue()
 
-        def _stop_loop_on_signal(s: signal.Signals):
+        def _stop_loop_on_signal(s: signal.Signals | SpecialExit):
             loop.call_soon_threadsafe(queue.put_nowait, s)
 
-        signal_service = SignalService(
-            startup=[ensure_schema, bot_thread.start],
-            signal_cbs=[_stop_loop_on_signal],
-            joins=[bot_thread.join],
-        )
+        signal_service = SignalService()
+        sock = signal_service.get_send_socket()
+
+        bot_thread = threading.Thread(target=_wrapped_run_bot, args=(loop, queue, sock))
+
+        signal_service.add_startup(ensure_schema)
+        signal_service.add_startup(bot_thread.start)
+        signal_service.add_signal_cb(_stop_loop_on_signal)
+        signal_service.add_join(bot_thread.join)
 
         signal_service.run()
 

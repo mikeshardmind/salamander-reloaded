@@ -64,11 +64,6 @@ class TagModal(discord.ui.Modal):
         await interaction.response.defer(ephemeral=True)
         cursor.execute(
             """
-            INSERT INTO discord_users (user_id, last_interaction)
-            VALUES (:author_id, CURRENT_TIMESTAMP)
-            ON CONFLICT (user_id)
-            DO UPDATE SET last_interaction=excluded.last_interaction;
-
             INSERT INTO user_tags (user_id, tag_name, content)
             VALUES (:author_id, :tag_name, :content)
             ON CONFLICT (user_id, tag_name)

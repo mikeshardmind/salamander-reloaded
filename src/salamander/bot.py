@@ -38,9 +38,10 @@ def _last_seen_update(conn: apsw.Connection, user_ids: Sequence[int]):
     with conn:
         cursor.executemany(
             """
-            UPDATE discord_users
-            SET last_interaction = CURRENT_TIMESTAMP
-            WHERE user_id = ?
+            INSERT INTO discord_users (user_id, last_interaction)
+            VALUES (?, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id)
+            DO UPDATE SET last_interaction=excluded.last_interaction;
             """,
             ((user_id,) for user_id in user_ids),
         )
@@ -117,7 +118,8 @@ class Salamander(discord.AutoShardedClient):
         await asyncio.to_thread(_last_seen_update, self.conn, user_ids)
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
-        self._waterfall.put(interaction.user.id)
+        if not self.is_blocked(interaction.user.id):
+            self._waterfall.put(interaction.user.id)
         for typ, regex, mapping in (
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
             (InteractionType.component, button_regex, self.raw_button_submits),

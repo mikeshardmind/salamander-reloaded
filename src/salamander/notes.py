@@ -70,11 +70,6 @@ class NoteModal(discord.ui.Modal):
             try:
                 cursor.execute(
                     """
-                    INSERT INTO discord_users (user_id, last_interaction)
-                    VALUES (:author_id, CURRENT_TIMESTAMP)
-                    ON CONFLICT (user_id)
-                    DO UPDATE SET last_interaction=excluded.last_interaction;
-
                     INSERT INTO user_notes (author_id, target_id, content)
                     VALUES (:author_id, :target_id, :content);
                     """,

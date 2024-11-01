@@ -48,3 +48,32 @@ avatar-ctx = Avatar
 raw-content-ctx = Raw content
 no-content = No content.
 raw-content-attached = Attached long raw content
+
+# notes
+
+note-title = Add Note
+note-modal-text-label = Note
+note-saved = Note saved
+note-limit-reached = You have 25 notes for this user already, clean some up before making more
+
+no-saved-notes = You have no saved notes for this user.
+no-longer-saved-notes = You no longer have any saved noted for this user.
+add-note-command = Add Note
+get-notes-command = Get Notes
+
+# tags
+tag-group = tag
+    .description = Store and recall content
+
+tag-modal-label = Tag
+tag-modal-title = Add tag
+tag-saved = Tag saved
+
+tag-create-command = create
+    .description = Create or replace a tag
+
+tag-get-command = get
+    .description = Get stored content from a tag
+
+tag-delete-command = delete
+    .description = Delete a tag

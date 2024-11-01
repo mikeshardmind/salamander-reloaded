@@ -148,7 +148,7 @@ class NumberofDice:
 
     @property
     def high(self) -> int:
-        if self._kd_expr:
+        if not self._kd_expr:
             return self.quant * self.sides
         return (self.keep_low or self.keep_high) * self.sides
 

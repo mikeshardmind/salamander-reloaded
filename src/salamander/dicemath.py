@@ -98,6 +98,35 @@ class DiceError(Exception):
         super().__init__(msg, *args)
 
 
+class TooManyDice(DiceError):
+    def __init__(self, msg: str | None = None, *args: Any):
+        msg = msg or "Whoops, too many dice here"
+        super().__init__(msg, *args)
+
+
+class TooManyKept(DiceError):
+    def __init__(self, msg: str | None = None, *args: Any):
+        msg = msg or "You can't keep more dice than you rolled."
+        super().__init__(msg, *args)
+
+class ExpectedOperator(DiceError):
+    def __init__(self, msg: str | None = None, *args: Any):
+        self.current = msg
+        msg = f"Expected an operator next (Current: {self.current})"
+        super().__init__(msg, *args)
+
+class ExpectedNumberOrDie(DiceError):
+    def __init__(self, msg: str | None = None, *args: Any):
+        self.current = msg
+        msg = f"Expected a number or die next (Current: {self.current}"
+        super().__init__(msg, *args)
+
+class IncompleteExpression(DiceError):
+    def __init__(self, msg: str | None = None, *args: Any):
+        self.current = msg
+        msg = f"Incomplete Expression: {self.current}"
+        super().__init__(msg, *args)
+
 T = TypeVar("T")
 
 
@@ -130,8 +159,7 @@ class NumberofDice:
         if kd and kdquant:
             mod = int(kdquant)
             if mod > self.quant:
-                msg = "You can't keep more dice than you rolled."
-                raise DiceError(msg)
+                raise TooManyKept
             self._kd_expr = f"{kd}{kdquant}"
             if kd == "v":
                 self.keep_low = min(mod, self.quant)
@@ -241,22 +269,19 @@ class Expression:
 
     def add_dice(self, die: NumberofDice | int) -> None:
         if len(self._components) % 2:
-            msg = f"Expected an operator next (Current: {self})"
-            raise DiceError(msg)
+            raise ExpectedOperator(str(self))
 
         if isinstance(die, NumberofDice):
             n = self._current_num_dice + die.quant
             if n > 1000:
-                msg = "Whoops, too many dice here"
-                raise DiceError(msg)
+                raise TooManyDice
             self._current_num_dice = n
 
         self._components.append(die)
 
     def add_operator(self, op: OperatorType) -> None:
         if not len(self._components) % 2:
-            msg = f"Expected a number or die next (Current: {self}"
-            raise DiceError(msg)
+            raise ExpectedNumberOrDie(str(self))
 
         self._components.append(op)
 
@@ -352,8 +377,7 @@ class Expression:
 
     def full_verbose_roll(self) -> tuple[int, str]:
         if not len(self._components) % 2:
-            msg = f"Incomplete Expression: {self}"
-            raise DiceError(msg)
+            raise IncompleteExpression(str(self))
 
         total = 0
         parts: list[str] = []
@@ -377,8 +401,7 @@ class Expression:
 
     def roll(self) -> int:
         if not len(self._components) % 2:
-            msg = f"Incomplete Expression: {self}"
-            raise DiceError(msg)
+            raise IncompleteExpression(str(self))
         total = 0
         next_operator = operator.add
 
@@ -394,8 +417,7 @@ class Expression:
 
     def get_min(self) -> int:
         if not len(self._components) % 2:
-            msg = f"Incomplete Expression: {self}"
-            raise DiceError(msg)
+            raise IncompleteExpression(str(self))
         total = 0
         next_operator = operator.add
 
@@ -416,8 +438,7 @@ class Expression:
 
     def get_max(self) -> int:
         if not len(self._components) % 2:
-            msg = f"Incomplete Expression: {self}"
-            raise DiceError(msg)
+            raise IncompleteExpression(str(self))
         total = 0
         next_operator = operator.add
 
@@ -448,18 +469,19 @@ class Expression:
                     obj.add_operator(op)
                     expr = expr[1:]
                 else:
-                    msg = f"Incomplete Expression: {obj}"
-                    raise DiceError(msg)
+                    raise IncompleteExpression(str(obj))
 
             else:
-                part, expr = _try_die_or_int(expr)
+                try:
+                    part, expr = _try_die_or_int(expr)
+                except DiceError as exc:
+                    raise ExpectedNumberOrDie(str(obj)) from exc
                 obj.add_dice(part)
 
             c += 1
 
         if not (c % 2 or c):
-            msg = f"Incomplete Expression: {obj}"
-            raise DiceError(msg)
+            raise IncompleteExpression(str(obj))
 
         expr = expr.strip()
 
@@ -467,8 +489,7 @@ class Expression:
 
     def get_ev(self) -> float:
         if not len(self._components) % 2:
-            msg = f"Incomplete Expression: {self}"
-            raise DiceError(msg)
+            raise IncompleteExpression(str(self))
 
         total = 0
         next_operator = operator.add

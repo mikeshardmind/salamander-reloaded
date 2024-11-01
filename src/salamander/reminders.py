@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+import arrow
 import discord
 import pytz
 from scheduler import DiscordBotScheduler, ScheduledDispatch
@@ -25,6 +26,11 @@ reminder_group = discord.app_commands.Group(
 
 
 TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
+
+MIN_YEAR = (arrow.Arrow.now(pytz.UTC) - timedelta(days=2)).datetime.year
+MAX_YEAR = MIN_YEAR + 2
+
+DATE_FMT = r"%Y-%m-%d %H:%M"
 
 
 class ReminderView:
@@ -150,10 +156,63 @@ async def remind_in(
     await itx.followup.send(f"Reminder scheduled for {formatted_ts}", ephemeral=True)
 
 
-# @reminder_group.command(name="at", description="remind at a specific time")
-async def remind_at(itx: Interaction) -> None:
-    ...
-    # TODO: time parser
+@reminder_group.command(name="at", description="remind at a specific time")
+async def remind_at(
+    itx: Interaction,
+    year: discord.app_commands.Range[int, MIN_YEAR, MAX_YEAR] = -1,
+    month: discord.app_commands.Range[int, 1, 12] = -1,
+    day: discord.app_commands.Range[int, 1, 31] = -1,
+    hour: discord.app_commands.Range[int, 0, 23] = -1,
+    minute: discord.app_commands.Range[int, 0, 59] = -1,
+    content: discord.app_commands.Range[str, 1, 1000] = "",
+) -> None:
+    replacements = {
+        "year": year,
+        "month": month,
+        "day": day,
+        "hour": hour,
+        "minute": minute,
+    }
+
+    replacements = {k: v for k, v in replacements.items() if v >= 0}
+
+    raw_tz = get_user_tz(itx.client.conn, itx.user.id)
+    user_tz = pytz.timezone(raw_tz)
+    now = arrow.now(user_tz)
+    try:
+        when = now.replace(**replacements)
+    except ValueError:
+        await itx.response.send_message("That isn't a valid calendar date", ephemeral=True)
+        return
+    if when < now:
+        await itx.response.send_message("That date is in the past!", ephemeral=True)
+        return
+
+    # make a fake jump url here
+    guild_id = itx.guild_id or "@me"
+    channel_id = itx.channel_id
+    message_id = discord.utils.time_snowflake(now.datetime)
+    context = f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+
+    reminder = Reminder(content=content, context=context, recur=None)
+
+    await itx.client.sched.schedule_event(
+        dispatch_name="reminder",
+        dispatch_zone=raw_tz,
+        user_id=itx.user.id,
+        dispatch_extra=reminder,
+        dispatch_time=when.strftime(DATE_FMT),
+    )
+
+    formatted_ts = discord.utils.format_dt(when.datetime, style="f")
+    message = f"Reminder scheduled for {formatted_ts}"
+    if raw_tz == "UTC":
+        footer = (
+            "-# This was scheduled using UTC, "
+            "consider setting your timezone with /settings timezone"
+        )
+        message = "\n".join((message, footer))
+    await itx.response.send_message(message, ephemeral=True)
 
 
 @reminder_group.command(name="list", description="view and optionally remove your reminders.")

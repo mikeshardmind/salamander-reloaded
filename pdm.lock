@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:41cb47f9d502aa7cf0876f6d621851df5eb134cf275ed7c897272b0e0a6b48cf"
+content_hash = "sha256:0497dbd7c6acf1cbf67bf0d9ef487cb358e02247e7c77165d1afde091d0ab753"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -423,7 +423,7 @@ name = "scheduler"
 version = "2024.10.31"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "88557ab9ad6b28fe718b6e237c060e7ae8d37a8d"
+revision = "b77cf7dc152069b49a89cbbabfd3ebc9eb310006"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 dependencies = [

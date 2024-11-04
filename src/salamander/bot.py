@@ -21,6 +21,8 @@ import discord
 import msgspec
 import scheduler
 import xxhash
+from async_utils.priority_sem import PrioritySemaphore, priority_context
+from async_utils.task_cache import taskcache
 from async_utils.waterfall import Waterfall
 from discord import InteractionType, app_commands
 
@@ -94,6 +96,10 @@ button_regex = re.compile(r"^b:(.{1,10}):(.*)$", flags=re.DOTALL)
 _missing: Any = object()
 
 
+class PreemptiveBlocked(Exception):
+    pass
+
+
 class Salamander(discord.AutoShardedClient):
     def __init__(
         self,
@@ -112,14 +118,47 @@ class Salamander(discord.AutoShardedClient):
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
         self._is_closing: bool = False
-        self._waterfall: Waterfall[int] = Waterfall(10, 100, self.update_last_seen)
+        self._last_interaction_waterfall = Waterfall(10, 100, self.update_last_seen)
+        self._dm_sem = PrioritySemaphore(5)
+
+    @taskcache(3600)
+    async def cachefetch_priority_ids(self) -> set[int]:
+        """Ensure DMs with these users are prioritized"""
+        app_info = await self.application_info()
+        owner = app_info.owner.id
+        team = app_info.team
+        if not team:
+            return {owner}
+
+        return {owner, *(t.id for t in team.members)}
+
+    async def _send_embeds_dm(
+        self,
+        user_id: int,
+        embeds: list[discord.Embed],
+    ) -> discord.Message:
+        priority = 1 if user_id in (await self.cachefetch_priority_ids()) else 5
+
+        with priority_context(priority):
+            async with self._dm_sem:
+                if self.is_blocked(user_id):
+                    raise PreemptiveBlocked from None
+                try:
+                    dm = await self.create_dm(discord.Object(user_id, type=discord.User))
+                    return await dm.send(embeds=embeds)
+
+                # todo: implement a threshold system for other http exceptions
+                except discord.NotFound:
+                    # prevent deleted users from continuing to have stuff sent
+                    self.set_blocked(user_id, True)
+                    raise
 
     async def update_last_seen(self, user_ids: Sequence[int], /) -> None:
         await asyncio.to_thread(_last_seen_update, self.conn, user_ids)
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
         if not self.is_blocked(interaction.user.id):
-            self._waterfall.put(interaction.user.id)
+            self._last_interaction_waterfall.put(interaction.user.id)
         for typ, regex, mapping in (
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
             (InteractionType.component, button_regex, self.raw_button_submits),
@@ -197,7 +236,7 @@ class Salamander(discord.AutoShardedClient):
         reconnect: bool = True,
         scheduler: scheduler.DiscordBotScheduler = _missing,
     ) -> None:
-        self._waterfall.start()
+        self._last_interaction_waterfall.start()
         if scheduler is _missing:
             msg = "Must provide a valid scheudler instance"
             raise RuntimeError(msg)
@@ -208,7 +247,7 @@ class Salamander(discord.AutoShardedClient):
         self._is_closing = True
         await self.sched.stop_gracefully()
         await super().close()
-        await self._waterfall.stop(wait=True)
+        await self._last_interaction_waterfall.stop(wait=True)
 
     async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         if self._is_closing:
@@ -232,12 +271,11 @@ class Salamander(discord.AutoShardedClient):
             )
 
             unrecoverable_fail = False
-            user_obj = discord.Object(user_id, type=discord.User)
+
             try:
-                channel = await self.create_dm(user_obj)
-                await channel.send(embed=embed)
-            except (discord.NotFound, discord.Forbidden):
-                # assume user doesn't exist or removed the app
+                # todo: batching of reminders by user
+                await self._send_embeds_dm(user_id, embeds=[embed])
+            except (discord.NotFound, discord.Forbidden, PreemptiveBlocked):
                 unrecoverable_fail = True
             except discord.HTTPException as exc:
                 logging.exception(

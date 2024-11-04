@@ -168,6 +168,7 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
 
     conn.pragma("analysis_limit", 400)
     conn.pragma("optimize")
+    conn.close()
 
 
 def _wrapped_run_bot(

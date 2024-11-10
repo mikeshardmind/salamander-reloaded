@@ -133,10 +133,10 @@ files = [
 
 [[package]]
 name = "async-utils"
-version = "7.0.1"
+version = "7.0.2"
 requires_python = ">=3.12.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "61ea5cbe352c9ff382da7327fb1997b8a11d9d85"
+revision = "2fff43d35428937bbf6aa253d8d729db7cf3599e"
 summary = "Various async utilities"
 groups = ["default"]
 
@@ -220,11 +220,11 @@ files = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5126+g63e9f559"
+version = "2.5.0a5129+gc09d002d"
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "63e9f55976de8709844c0f6446d55f5e68f15194"
+revision = "c09d002df934d1306bbfa2e659fd3b6c162c779a"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 dependencies = [
@@ -234,12 +234,12 @@ dependencies = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5126"
+version = "2.5.0a5129"
 extras = ["speed"]
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "63e9f55976de8709844c0f6446d55f5e68f15194"
+revision = "c09d002df934d1306bbfa2e659fd3b6c162c779a"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 dependencies = [
@@ -423,7 +423,7 @@ name = "scheduler"
 version = "2024.10.31"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "b77cf7dc152069b49a89cbbabfd3ebc9eb310006"
+revision = "89f3f1bacf744bf359f2b2e2bbd1aae65873e70c"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 dependencies = [

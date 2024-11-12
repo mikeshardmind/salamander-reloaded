@@ -13,6 +13,9 @@ from datetime import datetime, timedelta
 import arrow
 import discord
 import pytz
+from async_utils.task_cache import lrutaskcache
+from discord import app_commands
+from discord.app_commands import Choice, Group
 from scheduler import DiscordBotScheduler, ScheduledDispatch
 
 from ._type_stuff import BotExports, DynButton, Reminder
@@ -20,15 +23,13 @@ from .bot import Interaction
 from .settings_commands import get_user_tz
 from .utils import b2048pack, b2048unpack
 
-reminder_group = discord.app_commands.Group(
-    name="remindme", description="remind yourself about something, later"
-)
+reminder_group = Group(name="remindme", description="remind yourself about something, later")
 
 
 TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
 
 MIN_YEAR = (arrow.Arrow.now(pytz.UTC) - timedelta(days=2)).datetime.year
-MAX_YEAR = MIN_YEAR + 2
+MAX_YEAR = MIN_YEAR + 3
 
 DATE_FMT = r"%Y-%m-%d %H:%M"
 
@@ -117,10 +118,10 @@ class ReminderView:
 @reminder_group.command(name="in", description="remind in an amount of time")
 async def remind_in(
     itx: Interaction,
-    days: discord.app_commands.Range[int, 0, 365] = 0,
-    hours: discord.app_commands.Range[int, 0, 72] = 0,
-    minutes: discord.app_commands.Range[int, 0, 59] = 0,
-    content: discord.app_commands.Range[str, 1, 1000] = "",
+    days: app_commands.Range[int, 0, 365] = 0,
+    hours: app_commands.Range[int, 0, 72] = 0,
+    minutes: app_commands.Range[int, 0, 59] = 0,
+    content: app_commands.Range[str, 1, 1000] = "",
 ) -> None:
     sched: DiscordBotScheduler = itx.client.sched
     await itx.response.defer(ephemeral=True)
@@ -156,21 +157,78 @@ async def remind_in(
     await itx.followup.send(f"Reminder scheduled for {formatted_ts}", ephemeral=True)
 
 
-@reminder_group.command(name="at", description="remind at a specific time")
+def parse_hour(hour: str) -> int | None:
+    hour = hour.replace(" ", "")
+
+    inthour = -1
+
+    if hour.endswith("m"):
+        hour, suffix = hour[:-2], hour[-2:]
+        if suffix.casefold() not in ("am", "pm"):
+            return None
+        if len(hour) > 2:
+            return None
+        try:
+            inthour = int(hour)
+        except ValueError:
+            return None
+        if suffix == "am" and inthour == 12:
+            inthour = 0
+        elif suffix == "pm" and inthour != 12:
+            inthour += 12
+    else:
+        try:
+            inthour = int(hour)
+        except ValueError:
+            return None
+
+    if 0 <= inthour <= 23:
+        return inthour
+
+    return None
+
+
+@reminder_group.command(name="at")
 async def remind_at(
     itx: Interaction,
-    year: discord.app_commands.Range[int, MIN_YEAR, MAX_YEAR] = -1,
-    month: discord.app_commands.Range[int, 1, 12] = -1,
-    day: discord.app_commands.Range[int, 1, 31] = -1,
-    hour: discord.app_commands.Range[int, 0, 23] = -1,
-    minute: discord.app_commands.Range[int, 0, 59] = -1,
-    content: discord.app_commands.Range[str, 1, 1000] = "",
+    year: app_commands.Range[int, MIN_YEAR, MAX_YEAR] = -1,
+    month: app_commands.Range[int, 1, 12] = -1,
+    day: app_commands.Range[int, 1, 31] = -1,
+    hour: app_commands.Range[str, 0, 5] = "",
+    minute: app_commands.Range[int, 0, 59] = -1,
+    content: app_commands.Range[str, 1, 1000] = "",
 ) -> None:
+    """Remind at a specific time. Any unit of time not provided with use the current time.
+
+    Parameters
+    ----------
+    year: int
+        The year to remind int. Defaults to the current year.
+    month: int
+        The month to remind at. 1 = January 2 = February ... 12 = December
+        defaults to the current month
+    day: int
+        The day of the month to remind at. Defaults to the current day.
+    hour: str
+        The hour to remind at.
+        Allows 24 hour time or 12 hour with "am" and "pm" suffixes.
+        Defaults to the current hour. 0 = 12am
+    minute: int
+        The minute to remind at. Defaults to the current minute.
+    content: str
+        Optional text to include alongside the reminder link.
+    """
+
+    inthour = parse_hour(hour)
+    if inthour is None:
+        await itx.response.send_message("Not a valid hour")
+        return
+
     replacements = {
         "year": year,
         "month": month,
         "day": day,
-        "hour": hour,
+        "hour": inthour,
         "minute": minute,
     }
 
@@ -218,6 +276,79 @@ async def remind_at(
 @reminder_group.command(name="list", description="view and optionally remove your reminders.")
 async def reminder_list(itx: Interaction) -> None:
     await ReminderView.start(itx, itx.user.id)
+
+
+@lrutaskcache(60, 256)
+async def _autocomplete_hour(current: str) -> list[Choice[str]]:
+    hours = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+    if not current:
+        am = (f"{h}am" for h in hours)
+        pm = (f"{h}pm" for h in hours)
+        return [app_commands.Choice(name=c, value=c) for c in (*am, *pm)]
+    if current in hours:
+        choices = (current, f"{current}am", f"{current}pm")
+        return [app_commands.Choice(name=c, value=c) for c in choices]
+    if parse_hour(current) is not None:
+        return [app_commands.Choice(name=current, value=current)]
+
+    return []
+
+
+@remind_at.autocomplete("hour")
+async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]:
+    return await _autocomplete_hour(current)
+
+
+@lrutaskcache(300, 512)
+async def _autocomplete_day(current: str, tzstr: str) -> list[Choice[int]]:
+    # fmt: off
+    days = (
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+        "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
+        "24", "25", "26", "27", "28", "29", "30", "31"
+    )
+    # fmt: on
+    if current in days:
+        return [Choice(name=current, value=int(current))]
+    if not current:
+        now = arrow.Arrow.now(pytz.timezone(tzstr))
+        if now._is_last_day_of_month(now):  # pyright: ignore[reportPrivateUsage]
+            day = now.datetime.day
+            return [Choice(name=str(day), value=day), Choice(name="1", value=1)]
+
+        day = now.datetime.day
+
+        return [Choice(name=str(day), value=day) for day in (day, day + 1)]
+
+    return []
+
+
+@remind_at.autocomplete("day")
+async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
+    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    return await _autocomplete_day(current, tzstr)
+
+
+@remind_at.autocomplete("month")
+async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]]:
+    months = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+    if not current:
+        return [Choice(name=f"{m}", value=m) for m in range(1, 13)]
+    if current in months:
+        return [Choice(name=current, value=int(current))]
+    return []
+
+
+@remind_at.autocomplete("year")
+async def autocomplete_year(itx: Interaction, current: str) -> list[Choice[int]]:
+    if not current:
+        return [Choice(name=str(y), value=y) for y in range(MIN_YEAR, MAX_YEAR + 1)]
+    if len(current) != 4:
+        return []
+    str_years = [str(y) for y in range(MIN_YEAR, MAX_YEAR + 1)]
+    if current in str_years:
+        return [Choice(name=current, value=int(current))]
+    return []
 
 
 exports = BotExports([reminder_group], raw_button_submits={"rmndrlst": ReminderView})

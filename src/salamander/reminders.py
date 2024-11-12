@@ -205,16 +205,15 @@ async def remind_at(
     Parameters
     ----------
     year: int
-        The year to remind int. Defaults to the current year.
+        Defaults to the current year.
     month: int
-        The month to remind at. 1 = January 2 = February ... 12 = December
-        defaults to the current month
+        The month to remind at. 1 = January 2 = February ... 12 = December.
+        Defaults to the current month
     day: int
-        The day of the month to remind at. Defaults to the current day.
+        Defaults to the current day.
     hour: str
-        The hour to remind at.
-        Allows 24 hour time or 12 hour with "am" and "pm" suffixes.
-        Defaults to the current hour. 0 = 12am
+        Allows 24 hour time or 12 hour with "am" and "pm". 0 = 12am
+        Defaults to the current hour.
     minute: int
         The minute to remind at. Defaults to the current minute.
     content: str

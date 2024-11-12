@@ -15,7 +15,7 @@ from functools import lru_cache
 import arrow
 import discord
 import pytz
-from async_utils.task_cache import lrutaskcache
+from async_utils.task_cache import taskcache
 from discord import app_commands
 from discord.app_commands import Choice, Group
 from scheduler import DiscordBotScheduler, ScheduledDispatch
@@ -293,7 +293,27 @@ def en_hour_to_str(hour: int) -> str:
     return f"{hour}am"
 
 
-@lrutaskcache(60, 256)
+@taskcache(60)
+async def _autocomplete_minute(current: str, tzstr: str) -> list[Choice[int]]:
+    if not current:
+        tz = pytz.timezone(tzstr)
+        m = arrow.Arrow.now(tz).datetime.minute
+        return [app_commands.Choice(name=str(z := m % 60), value=z) for m in range(m, m + 11)]
+
+    minutes_str = list(map(str, range(60)))
+    if current in minutes_str:
+        return [app_commands.Choice(name=current, value=int(current))]
+
+    return []
+
+
+@remind_at.autocomplete("minute")
+async def autocomplete_minute(itx: Interaction, current: str) -> list[Choice[int]]:
+    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    return await _autocomplete_minute(current, tzstr)
+
+
+@taskcache(60)
 async def _autocomplete_hour(current: str, tzstr: str) -> list[Choice[str]]:
     hours_int = range(24)
     hours = deque(en_hour_to_str(hour) for hour in range(24))
@@ -324,7 +344,7 @@ async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]
     return await _autocomplete_hour(current, tzstr)
 
 
-@lrutaskcache(300, 512)
+@taskcache(300)
 async def _autocomplete_day(current: str, tzstr: str) -> list[Choice[int]]:
     # fmt: off
     days = (

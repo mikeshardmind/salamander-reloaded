@@ -8,7 +8,9 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
+from collections import deque
 from datetime import datetime, timedelta
+from functools import lru_cache
 
 import arrow
 import discord
@@ -278,14 +280,36 @@ async def reminder_list(itx: Interaction) -> None:
     await ReminderView.start(itx, itx.user.id)
 
 
+@lru_cache(64)
+def en_hour_to_str(hour: int) -> str:
+    if hour == 0:
+        return "12am"
+    if hour == 12:
+        return "12pm"
+
+    if hour > 12:
+        return f"{hour - 12}pm"
+
+    return f"{hour}am"
+
+
 @lrutaskcache(60, 256)
-async def _autocomplete_hour(current: str) -> list[Choice[str]]:
-    hours = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+async def _autocomplete_hour(current: str, tzstr: str) -> list[Choice[str]]:
+    hours_int = range(24)
+    hours = deque(en_hour_to_str(hour) for hour in range(24))
     if not current:
-        am = (f"{h}am" for h in hours)
-        pm = (f"{h}pm" for h in hours)
-        return [app_commands.Choice(name=c, value=c) for c in (*am, *pm)]
+        tz = pytz.timezone(tzstr)
+        now = arrow.Arrow.now(tz)
+        hour = en_hour_to_str(now.datetime.hour)
+        while hour != hours[0]:
+            hours.rotate()
+
+        return [app_commands.Choice(name=c, value=c) for c in hours]
+
     if current in hours:
+        return [app_commands.Choice(name=current, value=current)]
+
+    if current in hours_int:
         choices = (current, f"{current}am", f"{current}pm")
         return [app_commands.Choice(name=c, value=c) for c in choices]
     if parse_hour(current) is not None:
@@ -296,7 +320,8 @@ async def _autocomplete_hour(current: str) -> list[Choice[str]]:
 
 @remind_at.autocomplete("hour")
 async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]:
-    return await _autocomplete_hour(current)
+    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    return await _autocomplete_hour(current, tzstr)
 
 
 @lrutaskcache(300, 512)

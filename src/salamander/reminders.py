@@ -294,16 +294,21 @@ def en_hour_to_str(hour: int) -> str:
 
 @taskcache(60)
 async def _autocomplete_minute(current: str, tzstr: str) -> list[Choice[int]]:
+    common_min = [0, 15, 20, 30, 40, 45]
     if not current:
         tz = pytz.timezone(tzstr)
         m = arrow.Arrow.now(tz).datetime.minute
-        return [app_commands.Choice(name=str(z := m % 60), value=z) for m in range(m, m + 11)]
 
-    minutes_str = list(map(str, range(60)))
-    if current in minutes_str:
-        return [app_commands.Choice(name=current, value=int(current))]
+        if m not in common_min:
+            c = app_commands.Choice(name=str(m), value=m)
+            return [c, *(app_commands.Choice(name=str(m), value=m) for m in common_min)]
 
-    return []
+    else:
+        minutes_str = list(map(str, range(60)))
+        if current in minutes_str:
+            return [app_commands.Choice(name=current, value=int(current))]
+
+    return [app_commands.Choice(name=str(m), value=m) for m in common_min]
 
 
 @remind_at.autocomplete("minute")
@@ -344,25 +349,53 @@ async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]
 
 
 @taskcache(300)
-async def _autocomplete_day(current: str, tzstr: str) -> list[Choice[int]]:
+async def _autocomplete_day(
+    current: str, tzstr: str, year: int | None, month: int | None
+) -> list[Choice[int]]:
     # fmt: off
-    days = (
+    days_str = (
         "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
         "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
         "24", "25", "26", "27", "28", "29", "30", "31"
     )
     # fmt: on
-    if current in days:
-        return [Choice(name=current, value=int(current))]
+    if current in days_str:
+        if not year or month:
+            return [Choice(name=current, value=int(current))]
+
+        now = arrow.Arrow.now(pytz.timezone(tzstr))
+        kwargs = {k: v for k, v in (("year", year), ("month", month)) if v}
+        when = now.replace(**kwargs) if kwargs else now
+
+        if (when.datetime.year, when.datetime.month) > (now.datetime.year, now.datetime.month):
+            start = when.replace(day=1)
+            end = start.shift(months=1)
+            span = arrow.Arrow.span_range("day", start.datetime, end.datetime, exact=True)
+            days = {str(s[0].datetime.day) for s in span}
+        else:
+            start = now
+            end = start.shift(months=1).replace(day=1)
+            span = arrow.Arrow.span_range("day", start.datetime, end.datetime, exact=True)
+            days = {str(s[0].datetime.day) for s in span}
+
+        if current in days:
+            return [Choice(name=current, value=int(current))]
+
     if not current:
         now = arrow.Arrow.now(pytz.timezone(tzstr))
-        if now._is_last_day_of_month(now):  # pyright: ignore[reportPrivateUsage]
-            day = now.datetime.day
-            return [Choice(name=str(day), value=day), Choice(name="1", value=1)]
+        kwargs = {k: v for k, v in (("year", year), ("month", month)) if v}
+        when = now.replace(**kwargs) if kwargs else now
 
-        day = now.datetime.day
+        if (when.datetime.year, when.datetime.month) > (now.datetime.year, now.datetime.month):
+            start = when.replace(day=1)
+            end = start.shift(months=1)
+        else:
+            start = now
+            end = start.shift(months=1).replace(day=1)
 
-        return [Choice(name=str(day), value=day) for day in (day, day + 1)]
+        span = arrow.Arrow.span_range("day", start.datetime, end.datetime, exact=True)
+        days = [*dict.fromkeys(s[0].datetime.day for s in span)][:10]
+        return [Choice(name=str(day), value=day) for day in days]
 
     return []
 
@@ -370,15 +403,29 @@ async def _autocomplete_day(current: str, tzstr: str) -> list[Choice[int]]:
 @remind_at.autocomplete("day")
 async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
-    return await _autocomplete_day(current, tzstr)
+    year = itx.namespace.__dict__.get("year", None)
+    month = itx.namespace.__dict__.get("month", None)
+    return await _autocomplete_day(current, tzstr, year, month)
 
 
 @remind_at.autocomplete("month")
 async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]]:
-    months = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+    months = deque(range(1, 13))
+    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    now = arrow.Arrow.now(pytz.timezone(tzstr))
+    starting_month = now.datetime.month
+    try:
+        year = itx.namespace["year"]
+    except KeyError:
+        pass
+    else:
+        if year > now.datetime.year:
+            starting_month = 1
+
     if not current:
-        return [Choice(name=f"{m}", value=m) for m in range(1, 13)]
-    if current in months:
+        months.rotate(1 - starting_month)
+        return [Choice(name=f"{m}", value=m) for m in months]
+    if current in map(str, months):
         return [Choice(name=current, value=int(current))]
     return []
 

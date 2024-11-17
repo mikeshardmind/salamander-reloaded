@@ -121,6 +121,10 @@ def with_logging() -> Generator[None]:
     root_logger.setLevel(logging.INFO)
     root_logger.addHandler(q_handler)
 
+    # adjust log levels
+    logging.getLogger("discord").setLevel(logging.WARNING)
+    logging.getLogger("discord.client").setLevel(logging.INFO)
+
     # Add apsw sqlite log forwarding
     apsw_log = logging.getLogger("apsw_forwarded")
     apsw.ext.log_sqlite(logger=apsw_log)

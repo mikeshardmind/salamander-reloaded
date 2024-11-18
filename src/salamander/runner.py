@@ -218,6 +218,8 @@ def run_bot() -> None:
         apsw.bestpractice.connection_busy_timeout,
         apsw.bestpractice.connection_enable_foreign_keys,
         apsw.bestpractice.connection_dqs,
+        apsw.bestpractice.connection_recursive_triggers,
+        apsw.bestpractice.connection_optimize,
     )
     apsw.bestpractice.apply(to_apply)  # pyright: ignore[reportUnknownMemberType]
 

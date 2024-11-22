@@ -10,7 +10,7 @@ select = [
     "ERA", "PD", "PLC", "PLE", "PLR", "PLW", "TRY", "NPY", "RUF", "ASYNC", "ANN",
 ]
 ignore = [
-    "S311",
+    "S311",  # Yes, I know that standard pseudo-random generators are not suitable for cryptographic purposes
     "RUF001",  # ambiguous characters not something I want to enforce here.
     "G002",  # erroneous issue with %-logging when logging can be confiured for % logging
     "S101",  # use of assert here is a known quantity, blame typing memes
@@ -18,8 +18,6 @@ ignore = [
     "PLC0105",  # no, I don't like co naming style for typevars, bye
     "SIM105",  # supressable exception, I'm not paying the overhead of contextlib.supress for stylistic choices.
     "C90",  # mccabe complexity memes
-    "ANN101", # missing "Self" annotation, self is implicit
-    "ANN102", # missing "type[Self]" annotation, also implicit
     "ANN202", # implied return fine sometimes
     "ANN204",  # special method return types
     "ANN401",  # Any return

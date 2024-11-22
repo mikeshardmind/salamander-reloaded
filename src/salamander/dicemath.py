@@ -64,7 +64,7 @@ def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
     return outermost_sum
 
 
-__all__ = ["Expression", "DiceError"]
+__all__ = ["DiceError", "Expression"]
 
 _OP_T = TypeVar("_OP_T")
 

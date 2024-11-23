@@ -48,7 +48,9 @@ def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
 
 
 @settings_group.command(name="timezone", description="Set your timezone")
-async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70]) -> None:
+async def tz_set(
+    itx: Interaction, zone: discord.app_commands.Range[str, 1, 70]
+) -> None:
     send = itx.response.send_message
     if zone == "local":
         await send("Invalid timezone: %s" % zone, ephemeral=True)
@@ -84,15 +86,22 @@ def closest_zones(current: str) -> list[str]:
     common_zones = pytz.common_timezones_set
 
     c_insensitive = current.casefold()
-    zone_matches = {z for z in common_zones if z.casefold().startswith(c_insensitive)}
+    zone_matches = {
+        z for z in common_zones if z.casefold().startswith(c_insensitive)
+    }
     if len(zone_matches) > 25:
         return [*sorted(zone_matches)][:25]
     return list(zone_matches)
 
 
 @tz_set.autocomplete("zone")
-async def zone_ac(itx: Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=x, value=x) for x in closest_zones(current)]
+async def zone_ac(
+    itx: Interaction, current: str
+) -> list[discord.app_commands.Choice[str]]:
+    return [
+        discord.app_commands.Choice(name=x, value=x)
+        for x in closest_zones(current)
+    ]
 
 
 exports = BotExports(commands=[settings_group])

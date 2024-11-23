@@ -26,7 +26,9 @@ def embed_from_user(member: discord.User | discord.Member) -> discord.Embed:
 
 
 @discord.app_commands.context_menu(name="Avatar")
-async def user_avatar(itx: Interaction, user: discord.User | discord.Member) -> None:
+async def user_avatar(
+    itx: Interaction, user: discord.User | discord.Member
+) -> None:
     await itx.response.send_message(embed=embed_from_user(user), ephemeral=True)
 
 

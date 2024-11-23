@@ -42,11 +42,15 @@ class DeleteAllDataFunc(Protocol):
 
 
 class DeleteUserDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, user_id: int, /) -> Coro[Any]: ...
+    def __call__(
+        self, client: SalamanderLike, user_id: int, /
+    ) -> Coro[Any]: ...
 
 
 class DeleteGuildDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, guild_id: int, /) -> Coro[Any]: ...
+    def __call__(
+        self, client: SalamanderLike, guild_id: int, /
+    ) -> Coro[Any]: ...
 
 
 class DeleteMemberDataFunc(Protocol):

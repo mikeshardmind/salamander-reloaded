@@ -35,7 +35,9 @@ def run_setup() -> None:
 def main() -> None:
     os.umask(0o077)
 
-    parser = argparse.ArgumentParser(description="Small suite of user installable tools")
+    parser = argparse.ArgumentParser(
+        description="Small suite of user installable tools"
+    )
     excl_setup = parser.add_mutually_exclusive_group()
     excl_setup.add_argument(
         "--setup",

@@ -14,7 +14,7 @@ import logging.handlers
 import re
 from collections.abc import Sequence
 from datetime import timedelta
-from typing import Any, Self
+from typing import Any, Self, override
 
 import apsw
 import discord
@@ -63,6 +63,7 @@ class VersionableTree(app_commands.CommandTree["Salamander"]):
             allowed_installs=installs,
         )
 
+    @override
     async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.client.is_blocked(interaction.user.id):
             resp = interaction.response
@@ -82,7 +83,8 @@ class VersionableTree(app_commands.CommandTree["Salamander"]):
         translator = self.translator
         if translator:
             payload = [
-                await command.get_translated_payload(tree, translator) for command in commands
+                await command.get_translated_payload(tree, translator)
+                for command in commands
             ]
         else:
             payload = [command.to_dict(tree) for command in commands]
@@ -118,7 +120,9 @@ class Salamander(discord.AutoShardedClient):
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
         self._is_closing: bool = False
-        self._last_interaction_waterfall = Waterfall(10, 100, self.update_last_seen)
+        self._last_interaction_waterfall = Waterfall(
+            10, 100, self.update_last_seen
+        )
         self._dm_sem = PrioritySemaphore(5)
 
     @taskcache(3600)
@@ -144,7 +148,9 @@ class Salamander(discord.AutoShardedClient):
                 if self.is_blocked(user_id):
                     raise PreemptiveBlocked from None
                 try:
-                    dm = await self.create_dm(discord.Object(user_id, type=discord.User))
+                    dm = await self.create_dm(
+                        discord.Object(user_id, type=discord.User)
+                    )
                     return await dm.send(embeds=embeds)
 
                 # todo: implement a threshold system for other http exceptions
@@ -156,7 +162,9 @@ class Salamander(discord.AutoShardedClient):
     async def update_last_seen(self, user_ids: Sequence[int], /) -> None:
         await asyncio.to_thread(_last_seen_update, self.conn, user_ids)
 
-    async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
+    async def on_interaction(
+        self, interaction: discord.Interaction[Self]
+    ) -> None:
         if not self.is_blocked(interaction.user.id):
             self._last_interaction_waterfall.put(interaction.user.id)
         for typ, regex, mapping in (
@@ -249,7 +257,9 @@ class Salamander(discord.AutoShardedClient):
         await super().close()
         await self._last_interaction_waterfall.stop(wait=True)
 
-    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
+    async def on_sinbad_scheduler_reminder(
+        self, event: scheduler.ScheduledDispatch
+    ) -> None:
         if self._is_closing:
             return
 

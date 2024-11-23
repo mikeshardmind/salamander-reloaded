@@ -17,7 +17,9 @@ import platformdirs
 from async_utils.task_cache import LRU
 from base2048 import decode, encode
 
-platformdir_stuff = platformdirs.PlatformDirs("salamander", "mikeshardmind", roaming=False)
+platformdir_stuff = platformdirs.PlatformDirs(
+    "salamander", "mikeshardmind", roaming=False
+)
 
 T = TypeVar("T")
 

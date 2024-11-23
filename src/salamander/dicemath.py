@@ -159,7 +159,9 @@ class NumberofDice:
         return self.quant
 
     def get_ev(self) -> float:
-        return fast_analytic_ev(self.quant, self.sides, self.keep_low, self.keep_high)
+        return fast_analytic_ev(
+            self.quant, self.sides, self.keep_low, self.keep_high
+        )
 
     def verbose_roll(self) -> tuple[int, list[int]]:
         numbers = random.choices(range(1, self.sides + 1), k=self.quant)
@@ -221,7 +223,7 @@ def _die_or_component_fmt(x: NumberofDice | OperatorType | int, /) -> str:
     # essentially, when a default exists, the type of the first
     # argument only matters for things that *can* be in the dict
     # This is an obnoxious issue
-    return ROPS.get(x, str(x))  # pyright: ignore
+    return ROPS.get(x, str(x))  # pyright: ignore[reportCallIssue,reportUnknownVariableType,reportArgumentType]
 
 
 class Expression:
@@ -401,7 +403,11 @@ class Expression:
             if isinstance(component, int):
                 total = next_operator(total, component)
             elif isinstance(component, NumberofDice):
-                mod = component.high if next_operator is operator.sub else component.low
+                mod = (
+                    component.high
+                    if next_operator is operator.sub
+                    else component.low
+                )
                 total = next_operator(total, mod)
             else:
                 next_operator = component
@@ -419,7 +425,11 @@ class Expression:
             if isinstance(component, int):
                 total = next_operator(total, component)
             elif isinstance(component, NumberofDice):
-                mod = component.low if next_operator is operator.sub else component.high
+                mod = (
+                    component.low
+                    if next_operator is operator.sub
+                    else component.high
+                )
                 total = next_operator(total, mod)
             else:
                 next_operator = component

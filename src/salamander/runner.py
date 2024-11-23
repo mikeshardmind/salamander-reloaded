@@ -47,7 +47,9 @@ def run_setup() -> None:
     store_token(token)
 
 
-def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signals]) -> None:
+def _run_bot(
+    loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signals]
+) -> None:
     db_path = platformdir_stuff.user_data_path / "salamander.db"
     conn = apsw.Connection(str(db_path))
 
@@ -124,7 +126,9 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
             _close_task = loop.create_task(client.close())
         loop.run_until_complete(asyncio.sleep(0.001))
 
-        tasks: set[asyncio.Task[Any]] = {t for t in asyncio.all_tasks(loop) if not t.done()}
+        tasks: set[asyncio.Task[Any]] = {
+            t for t in asyncio.all_tasks(loop) if not t.done()
+        }
 
         async def limited_finalization():
             _done, pending = await asyncio.wait(tasks, timeout=0.1)
@@ -140,7 +144,9 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
             for task in pending:
                 name = task.get_name()
                 coro = task.get_coro()
-                log.warning("Task %s wrapping coro %r did not exit properly", name, coro)
+                log.warning(
+                    "Task %s wrapping coro %r did not exit properly", name, coro
+                )
 
         if tasks:
             loop.run_until_complete(limited_finalization())
@@ -150,13 +156,11 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
         for task in tasks:
             try:
                 if (exc := task.exception()) is not None:
-                    loop.call_exception_handler(
-                        {
-                            "message": "Unhandled exception in task during shutdown.",
-                            "exception": exc,
-                            "task": task,
-                        }
-                    )
+                    loop.call_exception_handler({
+                        "message": "Unhandled exception in task during shutdown.",
+                        "exception": exc,
+                        "task": task,
+                    })
             except (asyncio.InvalidStateError, asyncio.CancelledError):
                 pass
 
@@ -233,7 +237,9 @@ def run_bot() -> None:
         signal_service = SignalService()
         sock = signal_service.get_send_socket()
 
-        bot_thread = threading.Thread(target=_wrapped_run_bot, args=(loop, queue, sock))
+        bot_thread = threading.Thread(
+            target=_wrapped_run_bot, args=(loop, queue, sock)
+        )
 
         signal_service.add_startup(ensure_schema)
         signal_service.add_startup(bot_thread.start)

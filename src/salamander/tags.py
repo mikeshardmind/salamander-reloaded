@@ -12,13 +12,14 @@ from itertools import chain
 
 import discord
 from apsw import Connection
+from async_utils.lru import LRU
 from base2048 import decode
 from discord.app_commands import Choice, Group, Range
 from msgspec import msgpack
 
 from ._type_stuff import BotExports
 from .bot import Interaction
-from .utils import LRU, b2048pack
+from .utils import b2048pack
 
 tag_group = Group(name="tag", description="Store and recall content")
 

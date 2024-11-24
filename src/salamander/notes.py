@@ -13,12 +13,13 @@ from datetime import UTC, datetime
 import apsw
 import discord
 import msgspec
+from async_utils.lru import LRU
 from base2048 import decode
 from discord import app_commands
 
 from ._type_stuff import BotExports, DynButton
 from .bot import Interaction
-from .utils import LRU, b2048pack
+from .utils import b2048pack
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
 

@@ -21,13 +21,14 @@ import discord
 import msgspec
 import scheduler
 import xxhash
+from async_utils.lru import LRU
 from async_utils.priority_sem import PrioritySemaphore, priority_context
 from async_utils.task_cache import taskcache
 from async_utils.waterfall import Waterfall
 from discord import InteractionType, app_commands
 
 from ._type_stuff import HasExports, RawSubmittable, Reminder
-from .utils import LRU, platformdir_stuff, resolve_path_with_links
+from .utils import platformdir_stuff, resolve_path_with_links
 
 log = logging.getLogger(__name__)
 

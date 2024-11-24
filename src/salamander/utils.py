@@ -14,7 +14,6 @@ from typing import TypeVar
 
 import msgspec
 import platformdirs
-from async_utils.task_cache import LRU
 from base2048 import decode, encode
 
 platformdir_stuff = platformdirs.PlatformDirs(
@@ -23,7 +22,7 @@ platformdir_stuff = platformdirs.PlatformDirs(
 
 T = TypeVar("T")
 
-__all__ = ["LRU", "b2048pack", "b2048unpack", "resolve_path_with_links"]
+__all__ = ["b2048pack", "b2048unpack", "resolve_path_with_links"]
 
 
 def _get_stored_token() -> str | None:

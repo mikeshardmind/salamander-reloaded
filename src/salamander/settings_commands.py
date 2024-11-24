@@ -11,10 +11,10 @@ from __future__ import annotations
 import apsw
 import discord
 import pytz
+from async_utils.lru import LRU
 
 from ._type_stuff import BotExports
 from .bot import Interaction
-from .utils import LRU
 
 settings_group = discord.app_commands.Group(
     name="settings",

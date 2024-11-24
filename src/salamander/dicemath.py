@@ -76,7 +76,11 @@ OPS: dict[str, OperatorType] = {
     "-": operator.sub,
 }
 
-ROPS: dict[OperatorType, str] = {
+# This needs this type so that a later thing doesn't need type ignores.
+# Essentially, we want to do. ROPS.get(thing_to_format)
+# and pyright yells about the keytype not being possible even when a default
+# is provided. This is dumb.
+ROPS: dict[OperatorType | NumberofDice | int, str] = {
     operator.add: "+",
     operator.sub: "-",
 }
@@ -219,11 +223,7 @@ def _try_die_or_int(expr: str) -> tuple[NumberofDice | int, str]:
 
 
 def _die_or_component_fmt(x: NumberofDice | OperatorType | int, /) -> str:
-    # .get() has the wrong syntesized method in type checkers
-    # essentially, when a default exists, the type of the first
-    # argument only matters for things that *can* be in the dict
-    # This is an obnoxious issue
-    return ROPS.get(x, str(x))  # pyright: ignore[reportCallIssue,reportUnknownVariableType,reportArgumentType]
+    return ROPS.get(x) or str(x)
 
 
 class Expression:

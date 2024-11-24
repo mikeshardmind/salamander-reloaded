@@ -217,15 +217,19 @@ def run_bot() -> None:
     and purposes it for signal handling, constructing everything else
     required in other threads with and without event loop use in those threads.
     """
-    to_apply: tuple[Any, ...] = (
-        apsw.bestpractice.connection_wal,
-        apsw.bestpractice.connection_busy_timeout,
-        apsw.bestpractice.connection_enable_foreign_keys,
-        apsw.bestpractice.connection_dqs,
-        apsw.bestpractice.connection_recursive_triggers,
-        apsw.bestpractice.connection_optimize,
-    )
-    apsw.bestpractice.apply(to_apply)  # pyright: ignore[reportUnknownMemberType]
+
+    def conn_hook(connection: apsw.Connection):
+        for hook in (
+            apsw.bestpractice.connection_wal,
+            apsw.bestpractice.connection_busy_timeout,
+            apsw.bestpractice.connection_enable_foreign_keys,
+            apsw.bestpractice.connection_dqs,
+            apsw.bestpractice.connection_recursive_triggers,
+            apsw.bestpractice.connection_optimize,
+        ):
+            hook(connection)
+
+    apsw.connection_hooks.append(conn_hook)
 
     with with_logging():
         loop = asyncio.new_event_loop()

@@ -25,9 +25,7 @@ from .bot import Interaction
 from .settings_commands import get_user_tz
 from .utils import b2048pack, b2048unpack
 
-reminder_group = Group(
-    name="remindme", description="remind yourself about something, later"
-)
+reminder_group = Group(name="remindme", description="Make reminders for later.")
 
 
 TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
@@ -513,5 +511,6 @@ async def autocomplete_year(
 
 
 exports = BotExports(
-    [reminder_group], raw_button_submits={"rmndrlst": ReminderView}
+    commands=[reminder_group],
+    raw_button_submits={"rmndrlst": ReminderView},
 )

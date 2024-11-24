@@ -268,5 +268,7 @@ async def get_note_ctx(
 
 
 exports = BotExports(
-    [add_note_ctx, get_note_ctx], {"note": NoteModal}, {"note": NotesView}
+    commands=[add_note_ctx, get_note_ctx],
+    raw_modal_submits={"note": NoteModal},
+    raw_button_submits={"note": NotesView},
 )

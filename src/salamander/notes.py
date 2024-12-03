@@ -53,7 +53,7 @@ class NoteModal(discord.ui.Modal):
         author_id, target_id = msgspec.msgpack.decode(
             packed, type=tuple[int, int]
         )
-        assert interaction.data
+        assert interaction.data, "Checked by caller"
 
         raw_ = interaction.data.get("components", None)
         if not raw_:

@@ -46,7 +46,7 @@ class ReminderView:
 
         item = items[index]
         reminder = item.unpack_extra(Reminder)
-        assert reminder
+        assert reminder, "Invariantly exists for all Reminder managed items."
         ts = item.get_arrow_time()
         embed = discord.Embed(
             description=reminder.content, timestamp=ts.datetime

@@ -51,7 +51,7 @@ class TagModal(discord.ui.Modal):
         packed = decode(data)
         author_id, tag_name = msgpack.decode(packed, type=tuple[int, str])
 
-        assert interaction.data
+        assert interaction.data, "Checked by caller"
 
         raw_ = interaction.data.get("components", None)
         if not raw_:

@@ -43,7 +43,7 @@ def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
         """,
         (user_id,),
     ).fetchone()
-    assert row is not None
+    assert row is not None, "Upsert + returning guaranteed to return a row"
     return row[0]
 
 

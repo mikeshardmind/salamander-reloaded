@@ -172,8 +172,7 @@ class Salamander(discord.AutoShardedClient):
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
             (InteractionType.component, button_regex, self.raw_button_submits),
         ):
-            if interaction.type is typ:
-                assert interaction.data is not None
+            if interaction.type is typ and interaction.data is not None:
                 custom_id = interaction.data.get("custom_id", "")
                 if match := regex.match(custom_id):
                     modal_name, data = match.groups()

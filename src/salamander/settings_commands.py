@@ -26,9 +26,9 @@ _user_tz_lru: LRU[int, str] = LRU(128)
 
 
 def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
-    _tz = _user_tz_lru.get(user_id, None)
-    if _tz is not None:
-        return _tz
+    user_tz = _user_tz_lru.get(user_id, None)
+    if user_tz is not None:
+        return user_tz
 
     cursor = conn.cursor()
     # the update here is required for this to return

@@ -78,7 +78,7 @@ class ReminderView:
         use_followup: bool = False,
     ) -> None:
         sched: DiscordBotScheduler = itx.client.sched
-        _l = await sched.list_event_schedule_for_user("reminder", user_id)
+        fetched = await sched.list_event_schedule_for_user("reminder", user_id)
 
         send = itx.followup.send if use_followup else itx.response.send_message
         edit = (
@@ -87,7 +87,7 @@ class ReminderView:
             else itx.response.edit_message
         )
 
-        if not _l:
+        if not fetched:
             if first:
                 await send("You have no reminders set", ephemeral=True)
             else:
@@ -99,7 +99,7 @@ class ReminderView:
             return
 
         element, first_disabled, last_disabled, prev_next_disabled, tid = (
-            cls.index_setup(_l, index)
+            cls.index_setup(fetched, index)
         )
         v = discord.ui.View(timeout=4)
 
@@ -121,7 +121,7 @@ class ReminderView:
         v.add_item(
             DynButton(label=">", custom_id=c_id, disabled=prev_next_disabled)
         )
-        c_id = "b:rmndrlst:" + b2048pack(("last", user_id, len(_l) - 1, tid))
+        c_id = "b:rmndrlst:" + b2048pack(("last", user_id, len(fetched) - 1, tid))
         v.add_item(
             DynButton(label=">>", custom_id=c_id, disabled=last_disabled)
         )

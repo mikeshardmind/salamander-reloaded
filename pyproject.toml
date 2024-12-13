@@ -56,7 +56,7 @@ unfixable = [
 ]
 
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "numpy"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 # https://discuss.python.org/t/problems-with-typeis/55410/6
@@ -67,6 +67,8 @@ convention = "google"
 "typing.TypeGuard".msg = "TypeGuard is fundamentally unsafe"
 "typing_extensions.TypeIs".msg = "TypeIs is fundamentally unsafe, even when using it as described to be safe"
 "typing_extensions.TypeGuard".msg = "TypeGuard is fundamentally unsafe"
+"typing.runtime_checkable".msg = "Runtime checkable is fundamentally unsafe."
+"typing_extensions.runtime_checkable".msg = "Runtime checkable is fundamentally unsafe."
 
 
 [tool.pdm]

@@ -15,7 +15,7 @@ import queue
 import sys
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Final, Protocol, TypeVar, runtime_checkable
+from typing import Any, Final, Protocol, TypeVar, cast
 
 import apsw
 import apsw.ext
@@ -29,7 +29,6 @@ class SupportsWrite(Protocol[_T_contra]):
     def write(self, s: _T_contra, /) -> object: ...
 
 
-@runtime_checkable
 class SupportsWriteAndisatty(Protocol[_T_contra]):
     def write(self, s: _T_contra, /) -> object: ...
     def isatty(self) -> bool: ...
@@ -87,7 +86,10 @@ class AnsiTermFormatter(logging.Formatter):
 
 
 def use_color_formatting(stream: Stream[str]) -> bool:
-    is_a_tty = isinstance(stream, SupportsWriteAndisatty) and stream.isatty()
+    is_a_tty: bool = False
+
+    if hasattr(stream, "isatty"):
+        is_a_tty = cast("SupportsWriteAndisatty[str]", stream).isatty()
 
     if os.environ.get("TERM_PROGRAM") == "vscode":
         return is_a_tty

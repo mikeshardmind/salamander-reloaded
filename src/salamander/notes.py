@@ -160,7 +160,7 @@ class NotesView:
         first: bool = False,
         use_followup: bool = False,
     ) -> None:
-        _l = get_user_notes(conn, user_id, target_id)
+        fetched = get_user_notes(conn, user_id, target_id)
 
         send = itx.followup.send if use_followup else itx.response.send_message
         edit = (
@@ -169,7 +169,7 @@ class NotesView:
             else itx.response.edit_message
         )
 
-        if not _l:
+        if not fetched:
             if first:
                 await send(
                     "You have no saved notes for this user.", ephemeral=True
@@ -182,7 +182,7 @@ class NotesView:
                 )
             return
 
-        element, f_disabled, l_disabled, single, ts = cls.index_setup(_l, index)
+        element, f_disabled, l_disabled, single, ts = cls.index_setup(fetched, index)
 
         v = discord.ui.View(timeout=4)
 
@@ -214,7 +214,7 @@ class NotesView:
             "last",
             user_id,
             target_id,
-            len(_l) - 1,
+            len(fetched) - 1,
             ts,
         ))
         v.add_item(DynButton(label=">>", custom_id=c_id, disabled=l_disabled))

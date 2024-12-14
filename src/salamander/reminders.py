@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections import deque
 from datetime import datetime, timedelta
-from functools import lru_cache
+from functools import lru_cache, partial
 
 import arrow
 import discord
@@ -75,21 +75,25 @@ class ReminderView:
         user_id: int,
         index: int,
         first: bool = False,
-        use_followup: bool = False,
+        defer_used: bool = False,
     ) -> None:
         sched: DiscordBotScheduler = itx.client.sched
         fetched = await sched.list_event_schedule_for_user("reminder", user_id)
 
-        send = itx.followup.send if use_followup else itx.response.send_message
         edit = (
             itx.edit_original_response
-            if use_followup
+            if defer_used
             else itx.response.edit_message
+        )
+        send = (
+            edit
+            if defer_used
+            else partial(itx.response.send_message, ephemeral=True)
         )
 
         if not fetched:
             if first:
-                await send("You have no reminders set", ephemeral=True)
+                await send(content="You have no reminders set")
             else:
                 await edit(
                     content="You no longer have any reminders set",
@@ -121,15 +125,18 @@ class ReminderView:
         v.add_item(
             DynButton(label=">", custom_id=c_id, disabled=prev_next_disabled)
         )
-        c_id = "b:rmndrlst:" + b2048pack(("last", user_id, len(fetched) - 1, tid))
+        c_id = "b:rmndrlst:" + b2048pack((
+            "last",
+            user_id,
+            len(fetched) - 1,
+            tid,
+        ))
         v.add_item(
             DynButton(label=">>", custom_id=c_id, disabled=last_disabled)
         )
 
-        if first:
-            await send(embed=element, view=v, ephemeral=True)
-        else:
-            await edit(embed=element, view=v)
+        method = send if first else edit
+        await method(embed=element, view=v)
 
     @classmethod
     async def raw_submit(cls, interaction: Interaction, data: str) -> None:
@@ -141,7 +148,7 @@ class ReminderView:
             sched: DiscordBotScheduler = interaction.client.sched
             await sched.unschedule_uuid(tid)
         await cls.edit_to_current_index(
-            interaction, user_id, idx, use_followup=True
+            interaction, user_id, idx, defer_used=True
         )
 
 
@@ -186,8 +193,8 @@ async def remind_in(
     )
 
     formatted_ts = discord.utils.format_dt(when, style="f")
-    await itx.followup.send(
-        f"Reminder scheduled for {formatted_ts}", ephemeral=True
+    await itx.edit_original_response(
+        content=f"Reminder scheduled for {formatted_ts}"
     )
 
 

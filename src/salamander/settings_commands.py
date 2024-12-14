@@ -71,7 +71,7 @@ async def tz_set(
             (itx.user.id, zone),
         )
         _user_tz_lru[itx.user.id] = zone
-        await itx.followup.send("Timezone set to %s" % zone, ephemeral=True)
+        await itx.edit_original_response(content="Timezone set to %s" % zone)
 
 
 _close_zone_cache: LRU[str, list[str]] = LRU(512)

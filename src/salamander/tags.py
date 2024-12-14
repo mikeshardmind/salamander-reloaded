@@ -72,7 +72,7 @@ class TagModal(discord.ui.Modal):
             """,
             {"author_id": author_id, "tag_name": tag_name, "content": content},
         )
-        await interaction.followup.send(content="Tag saved", ephemeral=True)
+        await interaction.edit_original_response(content="Tag saved")
 
 
 @tag_group.command(name="create")
@@ -116,7 +116,7 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
         (itx.user.id, name),
     ).fetchall()
     msg = "Tag Deleted" if row else "No such tag"
-    await itx.followup.send(msg, ephemeral=True)
+    await itx.edit_original_response(content=msg)
 
 
 _cache: LRU[tuple[int, str], list[Choice[str]]] = LRU(1024)

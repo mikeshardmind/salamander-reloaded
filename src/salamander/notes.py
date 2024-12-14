@@ -9,6 +9,7 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import partial
 
 import apsw
 import discord
@@ -88,12 +89,11 @@ class NoteModal(discord.ui.Modal):
                 too_many = False
 
         if not too_many:
-            await interaction.followup.send("Note saved", ephemeral=True)
+            await interaction.edit_original_response(content="Note saved")
             _user_notes_lru.remove((author_id, target_id))
         else:
-            await interaction.followup.send(
-                "You have 25 notes for this user already, clean some up before making more",
-                ephemeral=True,
+            await interaction.edit_original_response(
+                content="You have 25 notes for this user already, clean some up before making more",
             )
 
 
@@ -158,22 +158,24 @@ class NotesView:
         index: int,
         *,
         first: bool = False,
-        use_followup: bool = False,
+        defer_used: bool = False,
     ) -> None:
         fetched = get_user_notes(conn, user_id, target_id)
 
-        send = itx.followup.send if use_followup else itx.response.send_message
         edit = (
             itx.edit_original_response
-            if use_followup
+            if defer_used
             else itx.response.edit_message
+        )
+        send = (
+            edit
+            if defer_used
+            else partial(itx.response.send_message, ephemeral=True)
         )
 
         if not fetched:
             if first:
-                await send(
-                    "You have no saved notes for this user.", ephemeral=True
-                )
+                await send(content="You have no saved notes for this user.")
             else:
                 await edit(
                     content="You no longer have any saved noted for this user.",
@@ -182,7 +184,9 @@ class NotesView:
                 )
             return
 
-        element, f_disabled, l_disabled, single, ts = cls.index_setup(fetched, index)
+        element, f_disabled, l_disabled, single, ts = cls.index_setup(
+            fetched, index
+        )
 
         v = discord.ui.View(timeout=4)
 
@@ -219,10 +223,8 @@ class NotesView:
         ))
         v.add_item(DynButton(label=">>", custom_id=c_id, disabled=l_disabled))
 
-        if first:
-            await send(embed=element, view=v, ephemeral=True)
-        else:
-            await edit(embed=element, view=v)
+        method = send if first else edit
+        await method(embed=element, view=v)
 
     @classmethod
     async def raw_submit(cls, interaction: Interaction, data: str) -> None:
@@ -247,7 +249,7 @@ class NotesView:
                 )
 
         await cls.edit_to_current_index(
-            interaction, conn, user_id, target_id, idx, use_followup=True
+            interaction, conn, user_id, target_id, idx, defer_used=True
         )
 
 

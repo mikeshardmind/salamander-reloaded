@@ -48,9 +48,7 @@ class KnownWarningFilter(logging.Filter):
 
 
 dt_fmt = "%Y-%m-%d %H:%M:%S"
-FMT = logging.Formatter(
-    "[%(asctime)s] [%(levelname)-8s}] %(name)s: %(message)s", dt_fmt
-)
+FMT = logging.Formatter("[%(asctime)s] [%(levelname)-8s}] %(name)s: %(message)s", dt_fmt)
 
 
 _MSG_PREFIX = "\x1b[30;1m%(asctime)s\x1b[0m "
@@ -67,9 +65,7 @@ class AnsiTermFormatter(logging.Formatter):
     )
 
     FORMATS: Final = {
-        level: logging.Formatter(
-            _MSG_PREFIX + color + _MSG_POSTFIX, "%Y-%m-%d %H:%M:%S"
-        )
+        level: logging.Formatter(_MSG_PREFIX + color + _MSG_POSTFIX, "%Y-%m-%d %H:%M:%S")
         for level, color in LC
     }
 
@@ -108,9 +104,7 @@ def with_logging() -> Generator[None]:
     q_handler.addFilter(KnownWarningFilter())
     stream_h = logging.StreamHandler()
 
-    log_path = resolve_path_with_links(
-        platformdir_stuff.user_log_path, folder=True
-    )
+    log_path = resolve_path_with_links(platformdir_stuff.user_log_path, folder=True)
     log_loc = log_path / "salamander.log"
     rotating_file_handler = logging.handlers.RotatingFileHandler(
         log_loc, maxBytes=2_000_000, backupCount=5
@@ -124,9 +118,7 @@ def with_logging() -> Generator[None]:
     rotating_file_handler.setFormatter(FMT)
 
     # add the queue listener for this
-    q_listener = logging.handlers.QueueListener(
-        q, stream_h, rotating_file_handler
-    )
+    q_listener = logging.handlers.QueueListener(q, stream_h, rotating_file_handler)
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
     root_logger.addHandler(q_handler)

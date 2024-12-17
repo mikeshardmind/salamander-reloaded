@@ -51,9 +51,7 @@ class NoteModal(discord.ui.Modal):
     @staticmethod
     async def raw_submit(interaction: Interaction, data: str) -> None:
         packed = decode(data)
-        author_id, target_id = msgspec.msgpack.decode(
-            packed, type=tuple[int, int]
-        )
+        author_id, target_id = msgspec.msgpack.decode(packed, type=tuple[int, int])
         assert interaction.data, "Checked by caller"
 
         raw_ = interaction.data.get("components", None)
@@ -92,14 +90,11 @@ class NoteModal(discord.ui.Modal):
             await interaction.edit_original_response(content="Note saved")
             _user_notes_lru.remove((author_id, target_id))
         else:
-            await interaction.edit_original_response(
-                content="You have 25 notes for this user already, clean some up before making more",
-            )
+            msg = "You have 25 notes for this user already, enough!"
+            await interaction.edit_original_response(content=msg)
 
 
-def get_user_notes(
-    conn: apsw.Connection, author_id: int, user_id: int
-) -> tuple[str, ...]:
+def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple[str, ...]:
     if nl := _user_notes_lru.get((author_id, user_id), None):
         return nl
 
@@ -144,9 +139,7 @@ class NotesView:
         user_id: int,
         target_id: int,
     ) -> None:
-        await cls.edit_to_current_index(
-            itx, conn, user_id, target_id, 0, first=True
-        )
+        await cls.edit_to_current_index(itx, conn, user_id, target_id, 0, first=True)
 
     @classmethod
     async def edit_to_current_index(
@@ -162,16 +155,8 @@ class NotesView:
     ) -> None:
         fetched = get_user_notes(conn, user_id, target_id)
 
-        edit = (
-            itx.edit_original_response
-            if defer_used
-            else itx.response.edit_message
-        )
-        send = (
-            edit
-            if defer_used
-            else partial(itx.response.send_message, ephemeral=True)
-        )
+        edit = itx.edit_original_response if defer_used else itx.response.edit_message
+        send = edit if defer_used else partial(itx.response.send_message, ephemeral=True)
 
         if not fetched:
             if first:
@@ -184,9 +169,7 @@ class NotesView:
                 )
             return
 
-        element, f_disabled, l_disabled, single, ts = cls.index_setup(
-            fetched, index
-        )
+        element, f_disabled, l_disabled, single, ts = cls.index_setup(fetched, index)
 
         v = discord.ui.View(timeout=4)
 
@@ -201,11 +184,7 @@ class NotesView:
         ))
         v.add_item(DynButton(label="<", custom_id=c_id, disabled=single))
         c_id = "b:note:" + b2048pack(("delete", user_id, target_id, index, ts))
-        v.add_item(
-            DynButton(
-                emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id
-            )
-        )
+        v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
         c_id = "b:note:" + b2048pack((
             "next",
             user_id,
@@ -248,23 +227,17 @@ class NotesView:
                     (user_id, target_id, ts),
                 )
 
-        await cls.edit_to_current_index(
-            interaction, conn, user_id, target_id, idx, defer_used=True
-        )
+        await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx, defer_used=True)
 
 
 @app_commands.context_menu(name="Add note")
-async def add_note_ctx(
-    itx: Interaction, user: discord.Member | discord.User
-) -> None:
+async def add_note_ctx(itx: Interaction, user: discord.Member | discord.User) -> None:
     modal = NoteModal(target_id=user.id, author_id=itx.user.id)
     await itx.response.send_modal(modal)
 
 
 @app_commands.context_menu(name="Get notes")
-async def get_note_ctx(
-    itx: Interaction, user: discord.Member | discord.User
-) -> None:
+async def get_note_ctx(itx: Interaction, user: discord.Member | discord.User) -> None:
     menu = NotesView()
     await menu.start(itx, itx.client.conn, itx.user.id, user.id)
 

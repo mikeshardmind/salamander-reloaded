@@ -26,10 +26,7 @@ tag_group = Group(name="tag", description="Store and recall content")
 
 class TagModal(discord.ui.Modal):
     tag: discord.ui.TextInput[TagModal] = discord.ui.TextInput(
-        label="Tag",
-        style=discord.TextStyle.paragraph,
-        min_length=1,
-        max_length=1000,
+        label="Tag", style=discord.TextStyle.paragraph, min_length=1, max_length=1000
     )
 
     def __init__(

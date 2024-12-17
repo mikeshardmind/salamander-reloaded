@@ -54,9 +54,9 @@ class VersionableTree(app_commands.CommandTree["Salamander"]):
     @classmethod
     def from_salamander(cls: type[Self], client: Salamander) -> Self:
         installs = app_commands.AppInstallationType(user=True, guild=False)
-        contexts = app_commands.AppCommandContext(
-            dm_channel=True, guild=True, private_channel=True
-        )
+
+        cx = app_commands.AppCommandContext
+        contexts = cx(dm_channel=True, guild=True, private_channel=True)
         return cls(
             client,
             fallback_to_global=False,
@@ -76,19 +76,13 @@ class VersionableTree(app_commands.CommandTree["Salamander"]):
         return True
 
     async def get_hash(self, tree: app_commands.CommandTree) -> bytes:
-        commands = sorted(
-            self._get_all_commands(guild=None),
-            key=lambda c: c.qualified_name,
-        )
+        coms = sorted(self._get_all_commands(guild=None), key=lambda c: c.qualified_name)
 
         translator = self.translator
         if translator:
-            payload = [
-                await command.get_translated_payload(tree, translator)
-                for command in commands
-            ]
+            payload = [await c.get_translated_payload(tree, translator) for c in coms]
         else:
-            payload = [command.to_dict(tree) for command in commands]
+            payload = [c.to_dict(tree) for c in coms]
 
         return xxhash.xxh64_digest(msgspec.msgpack.encode(payload), seed=0)
 
@@ -107,11 +101,12 @@ class Salamander(discord.AutoShardedClient):
     def __init__(
         self,
         *args: Any,
-        intents: discord.Intents,
+        intents: discord.Intents | None = None,
         conn: apsw.Connection,
         initial_exts: list[HasExports],
         **kwargs: Any,
     ):
+        intents = intents or discord.Intents.none()
         super().__init__(*args, intents=intents, **kwargs)
         self.raw_modal_submits: dict[str, RawSubmittable] = {}
         self.raw_button_submits: dict[str, RawSubmittable] = {}
@@ -121,9 +116,7 @@ class Salamander(discord.AutoShardedClient):
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
         self._is_closing: bool = False
-        self._last_interaction_waterfall = Waterfall(
-            10, 100, self.update_last_seen
-        )
+        self._last_interact_waterfall = Waterfall(10, 100, self.update_last_seen)
         self._dm_sem = PrioritySemaphore(5)
 
     @taskcache(3600)
@@ -149,9 +142,7 @@ class Salamander(discord.AutoShardedClient):
                 if self.is_blocked(user_id):
                     raise PreemptiveBlocked from None
                 try:
-                    dm = await self.create_dm(
-                        discord.Object(user_id, type=discord.User)
-                    )
+                    dm = await self.create_dm(discord.Object(user_id, type=discord.User))
                     return await dm.send(embeds=embeds)
 
                 # todo: implement a threshold system for other http exceptions
@@ -163,11 +154,9 @@ class Salamander(discord.AutoShardedClient):
     async def update_last_seen(self, user_ids: Sequence[int], /) -> None:
         await asyncio.to_thread(_last_seen_update, self.conn, user_ids)
 
-    async def on_interaction(
-        self, interaction: discord.Interaction[Self]
-    ) -> None:
+    async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
         if not self.is_blocked(interaction.user.id):
-            self._last_interaction_waterfall.put(interaction.user.id)
+            self._last_interact_waterfall.put(interaction.user.id)
         for typ, regex, mapping in (
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
             (InteractionType.component, button_regex, self.raw_button_submits),
@@ -244,7 +233,7 @@ class Salamander(discord.AutoShardedClient):
         reconnect: bool = True,
         scheduler: scheduler.DiscordBotScheduler = _missing,
     ) -> None:
-        self._last_interaction_waterfall.start()
+        self._last_interact_waterfall.start()
         if scheduler is _missing:
             msg = "Must provide a valid scheudler instance"
             raise RuntimeError(msg)
@@ -255,11 +244,9 @@ class Salamander(discord.AutoShardedClient):
         self._is_closing = True
         await self.sched.stop_gracefully()
         await super().close()
-        await self._last_interaction_waterfall.stop(wait=True)
+        await self._last_interact_waterfall.stop(wait=True)
 
-    async def on_sinbad_scheduler_reminder(
-        self, event: scheduler.ScheduledDispatch
-    ) -> None:
+    async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         if self._is_closing:
             return
 
@@ -271,14 +258,9 @@ class Salamander(discord.AutoShardedClient):
             return
 
         if reminder and user_id:
-            embed = discord.Embed(
-                description=reminder.content,
-                title="Your requested reminder",
-            )
-            embed.add_field(
-                name="Jump to around where you created this reminder",
-                value=reminder.context,
-            )
+            embed = discord.Embed(description=reminder.content, title="Your requested reminder")
+            jmp_label = "Jump to around where you created this reminder"
+            embed.add_field(name=jmp_label, value=reminder.context)
 
             unrecoverable_fail = False
 

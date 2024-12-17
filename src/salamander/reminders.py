@@ -48,21 +48,13 @@ class ReminderView:
         reminder = item.unpack_extra(Reminder)
         assert reminder, "Invariantly exists for all Reminder managed items."
         ts = item.get_arrow_time()
-        embed = discord.Embed(
-            description=reminder.content, timestamp=ts.datetime
-        )
+        embed = discord.Embed(description=reminder.content, timestamp=ts.datetime)
 
         first_disabled = index == 0
         last_disabled = index == ln - 1
         prev_next_disabled = ln == 1
 
-        return (
-            embed,
-            first_disabled,
-            last_disabled,
-            prev_next_disabled,
-            item.task_id,
-        )
+        return (embed, first_disabled, last_disabled, prev_next_disabled, item.task_id)
 
     @classmethod
     async def start(cls, itx: Interaction, user_id: int) -> None:
@@ -80,60 +72,29 @@ class ReminderView:
         sched: DiscordBotScheduler = itx.client.sched
         fetched = await sched.list_event_schedule_for_user("reminder", user_id)
 
-        edit = (
-            itx.edit_original_response
-            if defer_used
-            else itx.response.edit_message
-        )
-        send = (
-            edit
-            if defer_used
-            else partial(itx.response.send_message, ephemeral=True)
-        )
+        edit = itx.edit_original_response if defer_used else itx.response.edit_message
+        send = edit if defer_used else partial(itx.response.send_message, ephemeral=True)
 
         if not fetched:
             if first:
                 await send(content="You have no reminders set")
             else:
-                await edit(
-                    content="You no longer have any reminders set",
-                    view=None,
-                    embed=None,
-                )
+                await edit(content="You no longer have any reminders set", view=None, embed=None)
             return
 
-        element, first_disabled, last_disabled, prev_next_disabled, tid = (
-            cls.index_setup(fetched, index)
-        )
+        element, f_dis, l_dis, pn_dis, tid = cls.index_setup(fetched, index)
         v = discord.ui.View(timeout=4)
 
         c_id = "b:rmndrlst:" + b2048pack(("first", user_id, 0, tid))
-        v.add_item(
-            DynButton(label="<<", custom_id=c_id, disabled=first_disabled)
-        )
+        v.add_item(DynButton(label="<<", custom_id=c_id, disabled=f_dis))
         c_id = "b:rmndrlst:" + b2048pack(("previous", user_id, index - 1, tid))
-        v.add_item(
-            DynButton(label="<", custom_id=c_id, disabled=prev_next_disabled)
-        )
+        v.add_item(DynButton(label="<", custom_id=c_id, disabled=pn_dis))
         c_id = "b:rmndrlst:" + b2048pack(("delete", user_id, index, tid))
-        v.add_item(
-            DynButton(
-                emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id
-            )
-        )
+        v.add_item(DynButton(emoji=TRASH_EMOJI, style=discord.ButtonStyle.red, custom_id=c_id))
         c_id = "b:rmndrlst:" + b2048pack(("next", user_id, index + 1, tid))
-        v.add_item(
-            DynButton(label=">", custom_id=c_id, disabled=prev_next_disabled)
-        )
-        c_id = "b:rmndrlst:" + b2048pack((
-            "last",
-            user_id,
-            len(fetched) - 1,
-            tid,
-        ))
-        v.add_item(
-            DynButton(label=">>", custom_id=c_id, disabled=last_disabled)
-        )
+        v.add_item(DynButton(label=">", custom_id=c_id, disabled=pn_dis))
+        c_id = "b:rmndrlst:" + b2048pack(("last", user_id, len(fetched) - 1, tid))
+        v.add_item(DynButton(label=">>", custom_id=c_id, disabled=l_dis))
 
         method = send if first else edit
         await method(embed=element, view=v)
@@ -147,9 +108,7 @@ class ReminderView:
         if action == "delete":
             sched: DiscordBotScheduler = interaction.client.sched
             await sched.unschedule_uuid(tid)
-        await cls.edit_to_current_index(
-            interaction, user_id, idx, defer_used=True
-        )
+        await cls.edit_to_current_index(interaction, user_id, idx, defer_used=True)
 
 
 @reminder_group.command(name="in", description="remind in an amount of time")
@@ -179,9 +138,7 @@ async def remind_in(
     guild_id = itx.guild_id or "@me"
     channel_id = itx.channel_id
     message_id = discord.utils.time_snowflake(now)
-    context = (
-        f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
-    )
+    context = f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
 
     reminder = Reminder(content=content, context=context, recur=None)
     await sched.schedule_event(
@@ -193,9 +150,7 @@ async def remind_in(
     )
 
     formatted_ts = discord.utils.format_dt(when, style="f")
-    await itx.edit_original_response(
-        content=f"Reminder scheduled for {formatted_ts}"
-    )
+    await itx.edit_original_response(content=f"Reminder scheduled for {formatted_ts}")
 
 
 def parse_hour(hour: str) -> int | None:
@@ -280,23 +235,17 @@ async def remind_at(
     try:
         when = now.replace(**replacements)
     except ValueError:
-        await itx.response.send_message(
-            "That isn't a valid calendar date", ephemeral=True
-        )
+        await itx.response.send_message("That isn't a valid calendar date", ephemeral=True)
         return
     if when < now:
-        await itx.response.send_message(
-            "That date is in the past!", ephemeral=True
-        )
+        await itx.response.send_message("That date is in the past!", ephemeral=True)
         return
 
     # make a fake jump url here
     guild_id = itx.guild_id or "@me"
     channel_id = itx.channel_id
     message_id = discord.utils.time_snowflake(now.datetime)
-    context = (
-        f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
-    )
+    context = f"https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
 
     reminder = Reminder(content=content, context=context, recur=None)
 
@@ -319,9 +268,7 @@ async def remind_at(
     await itx.response.send_message(message, ephemeral=True)
 
 
-@reminder_group.command(
-    name="list", description="view and optionally remove your reminders."
-)
+@reminder_group.command(name="list", description="view and optionally remove your reminders.")
 async def reminder_list(itx: Interaction) -> None:
     await ReminderView.start(itx, itx.user.id)
 
@@ -350,10 +297,7 @@ async def _autocomplete_minute(current: str, tzstr: str) -> list[Choice[int]]:
             c = app_commands.Choice(name=str(m), value=m)
             return [
                 c,
-                *(
-                    app_commands.Choice(name=str(m), value=m)
-                    for m in common_min
-                ),
+                *(app_commands.Choice(name=str(m), value=m) for m in common_min),
             ]
 
     else:
@@ -365,9 +309,7 @@ async def _autocomplete_minute(current: str, tzstr: str) -> list[Choice[int]]:
 
 
 @remind_at.autocomplete("minute")
-async def autocomplete_minute(
-    itx: Interaction, current: str
-) -> list[Choice[int]]:
+async def autocomplete_minute(itx: Interaction, current: str) -> list[Choice[int]]:
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
     return await _autocomplete_minute(current, tzstr)
 
@@ -398,9 +340,7 @@ async def _autocomplete_hour(current: str, tzstr: str) -> list[Choice[str]]:
 
 
 @remind_at.autocomplete("hour")
-async def autocomplete_hour(
-    itx: Interaction, current: str
-) -> list[Choice[str]]:
+async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]:
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
     return await _autocomplete_hour(current, tzstr)
 
@@ -430,16 +370,12 @@ async def _autocomplete_day(
         ):
             start = when.replace(day=1)
             end = start.shift(months=1)
-            span = arrow.Arrow.span_range(
-                "day", start.datetime, end.datetime, exact=True
-            )
+            span = arrow.Arrow.span_range("day", start.datetime, end.datetime, exact=True)
             days = {str(s[0].datetime.day) for s in span}
         else:
             start = now
             end = start.shift(months=1).replace(day=1)
-            span = arrow.Arrow.span_range(
-                "day", start.datetime, end.datetime, exact=True
-            )
+            span = arrow.Arrow.span_range("day", start.datetime, end.datetime, exact=True)
             days = {str(s[0].datetime.day) for s in span}
 
         if current in days:
@@ -460,9 +396,7 @@ async def _autocomplete_day(
             start = now
             end = start.shift(months=1).replace(day=1)
 
-        span = arrow.Arrow.span_range(
-            "day", start.datetime, end.datetime, exact=True
-        )
+        span = arrow.Arrow.span_range("day", start.datetime, end.datetime, exact=True)
         days = [*dict.fromkeys(s[0].datetime.day for s in span)][:10]
         return [Choice(name=str(day), value=day) for day in days]
 
@@ -478,9 +412,7 @@ async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
 
 
 @remind_at.autocomplete("month")
-async def autocomplete_month(
-    itx: Interaction, current: str
-) -> list[Choice[int]]:
+async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]]:
     months = deque(range(1, 13))
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
     now = arrow.Arrow.now(pytz.timezone(tzstr))
@@ -502,13 +434,9 @@ async def autocomplete_month(
 
 
 @remind_at.autocomplete("year")
-async def autocomplete_year(
-    itx: Interaction, current: str
-) -> list[Choice[int]]:
+async def autocomplete_year(itx: Interaction, current: str) -> list[Choice[int]]:
     if not current:
-        return [
-            Choice(name=str(y), value=y) for y in range(MIN_YEAR, MAX_YEAR + 1)
-        ]
+        return [Choice(name=str(y), value=y) for y in range(MIN_YEAR, MAX_YEAR + 1)]
     if len(current) != 4:
         return []
     str_years = [str(y) for y in range(MIN_YEAR, MAX_YEAR + 1)]

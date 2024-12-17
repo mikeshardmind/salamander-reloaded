@@ -20,9 +20,7 @@ type Expr = Range[str, 0, 500]
 
 
 @dice_group.command(name="roll")
-async def roll(
-    itx: Interaction, expression: Expr, secret: bool = False
-) -> None:
+async def roll(itx: Interaction, expression: Expr, secret: bool = False) -> None:
     """Roll some dice"""
     send = itx.response.send_message
     try:
@@ -38,9 +36,7 @@ async def roll(
 
 
 @dice_group.command(name="info")
-async def rverb(
-    itx: Interaction, expression: Expr, secret: bool = False
-) -> None:
+async def rverb(itx: Interaction, expression: Expr, secret: bool = False) -> None:
     """
     Get info about an expression
     """
@@ -53,11 +49,8 @@ async def rverb(
     except DiceError as err:
         return await send(f"{err}", ephemeral=True)
 
-    return await send(
-        f"Information about dice Expression: "
-        f"{ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}",
-        ephemeral=secret,
-    )
+    msg = f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}"
+    return await send(msg, ephemeral=secret)
 
 
 exports = BotExports([dice_group])

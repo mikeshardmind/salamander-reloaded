@@ -1,7 +1,7 @@
 [tool.ruff]
 
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 preview = true
 
 [tool.ruff.format]
@@ -78,7 +78,7 @@ name = "salamander"
 description = "\"A discord bot\""
 readme = "README.md"
 license = {text = "MPL-2.0"}
-requires-python = ">=3.12.0"
+requires-python = ">=3.13.0"
 authors = [
     { name = "Michael Hall", email = "michael@michaelhall.tech" },
 ]
@@ -95,7 +95,7 @@ dependencies = [
     "platformdirs>=4.2.2",
     "apsw>=3.47.0.0",
     "scheduler @ git+https://github.com/mikeshardmind/discord-scheduler",
-    "msgspec>=0.18.6",
+    "msgspec>=0.19.0",
     "discord-py[speed] @ git+https://github.com/mikeshardmind/discord.py@salamander-reloaded",
     "mikeshardmind-base2048>=1.0.0",
     "aiohttp>=3.10.5",
@@ -109,7 +109,7 @@ version = "0.1.0"
 [tool.pyright]
 include = ["src"]
 typeCheckingMode = "strict"
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 pythonPlatform = "All"
 reportCallInDefaultInitializer = "warning"
 reportImportCycles = "error"

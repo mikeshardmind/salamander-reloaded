@@ -5,11 +5,9 @@ I'm slowly moving old stuff to the new bot.
 
 ### Want to anyhow?
 
-python3.12
+python3.13
 
 - cpython, specifically. It may incidentally work on Graalpy with minimal changes.
-- it may incidentally work on python3.13 with minimal changes, but this is not
-a supoprted configuration yet.
 - Free threading support will find itself blocked by several dependencies
 - not supported as a library and does not have a stable library api
 

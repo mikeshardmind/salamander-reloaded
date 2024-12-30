@@ -13,7 +13,7 @@ import random
 import re
 from collections.abc import Callable, Generator
 from functools import lru_cache
-from typing import Any, Self, TypeVar
+from typing import Any, Self
 
 
 @lru_cache(128)
@@ -66,10 +66,10 @@ def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
 
 __all__ = ["DiceError", "Expression"]
 
-_OP_T = TypeVar("_OP_T")
 
-_OperatorType = Callable[[_OP_T, _OP_T], _OP_T]
-OperatorType = _OperatorType[Any]
+type OperatorType[T: object = Any] = Callable[[T, T], T]  # noqa: E251
+type Component = NumberofDice | OperatorType | int
+
 
 OPS: dict[str, OperatorType] = {
     "+": operator.add,
@@ -96,9 +96,6 @@ class DiceError(Exception):
     def __init__(self, msg: str | None = None, *args: Any):
         self.msg = msg
         super().__init__(msg, *args)
-
-
-T = TypeVar("T")
 
 
 def fast_analytic_ev(quant: int, sides: int, low: int, high: int) -> float:
@@ -220,13 +217,13 @@ def _try_die_or_int(expr: str) -> tuple[NumberofDice | int, str]:
     raise DiceError
 
 
-def _die_or_component_fmt(x: NumberofDice | OperatorType | int, /) -> str:
+def _die_or_component_fmt(x: Component, /) -> str:
     return ROPS.get(x) or str(x)
 
 
 class Expression:
     def __init__(self):
-        self._components: list[NumberofDice | OperatorType | int] = []
+        self._components: list[Component] = []
         self._current_num_dice = 0
 
     def __repr__(self):
@@ -259,7 +256,7 @@ class Expression:
         self._components.append(op)
 
     @staticmethod
-    def _group_by_dice(components: list[T]) -> Generator[list[T], Any, Any]:
+    def _group_by_dice[T: Component](components: list[T]) -> Generator[list[T], Any, Any]:
         start = 0
         for idx, component in enumerate(components):
             if isinstance(component, NumberofDice):

@@ -34,23 +34,23 @@ class DynButton(ui.Button[ui.View]):
         pass
 
 
-type Coro[T] = Coroutine[None, None, T]
+type Coro[T: object = Any] = Coroutine[None, None, T]  # noqa: E251
 
 
 class DeleteAllDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, /) -> Coro[Any]: ...
+    def __call__(self, client: SalamanderLike, /) -> Coro: ...
 
 
 class DeleteUserDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, user_id: int, /) -> Coro[Any]: ...
+    def __call__(self, client: SalamanderLike, user_id: int, /) -> Coro: ...
 
 
 class DeleteGuildDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, guild_id: int, /) -> Coro[Any]: ...
+    def __call__(self, client: SalamanderLike, guild_id: int, /) -> Coro: ...
 
 
 class DeleteMemberDataFunc(Protocol):
-    def __call__(self, client: SalamanderLike, guild_id: int, user_id: int, /) -> Coro[Any]: ...
+    def __call__(self, client: SalamanderLike, guild_id: int, user_id: int, /) -> Coro: ...
 
 
 class RawSubmittableCls(Protocol):

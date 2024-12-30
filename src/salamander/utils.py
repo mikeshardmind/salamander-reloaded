@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TypeVar
 
 import msgspec
 import platformdirs
@@ -18,7 +17,6 @@ from base2048 import decode, encode
 
 platformdir_stuff = platformdirs.PlatformDirs("salamander", "mikeshardmind", roaming=False)
 
-T = TypeVar("T")
 
 __all__ = ["b2048pack", "b2048unpack", "resolve_path_with_links"]
 
@@ -54,7 +52,7 @@ def b2048pack(obj: object, /) -> str:
     return encode(msgspec.msgpack.encode(obj))
 
 
-def b2048unpack(packed: str, typ: type[T], /) -> T:
+def b2048unpack[T](packed: str, typ: type[T], /) -> T:
     return msgspec.msgpack.decode(decode(packed), type=typ)
 
 

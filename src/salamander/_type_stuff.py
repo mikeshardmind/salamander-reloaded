@@ -34,7 +34,7 @@ class DynButton(ui.Button[ui.View]):
         pass
 
 
-type Coro[T: object = Any] = Coroutine[None, None, T]  # noqa: E251
+type Coro[T: object = Any] = Coroutine[None, None, T]
 
 
 class DeleteAllDataFunc(Protocol):

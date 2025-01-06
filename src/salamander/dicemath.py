@@ -67,7 +67,7 @@ def _ev_roll_dice_keep_worst(quant: int, sides: int, keep: int) -> float:
 __all__ = ["DiceError", "Expression"]
 
 
-type OperatorType[T: object = Any] = Callable[[T, T], T]  # noqa: E251
+type OperatorType[T: object = Any] = Callable[[T, T], T]
 type Component = NumberofDice | OperatorType | int
 
 

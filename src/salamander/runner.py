@@ -9,6 +9,7 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 import asyncio
+import gc
 import getpass
 import logging
 import os
@@ -204,6 +205,7 @@ def run_bot() -> None:
     and purposes it for signal handling, constructing everything else
     required in other threads with and without event loop use in those threads.
     """
+    gc.set_threshold(0)
 
     def conn_hook(connection: apsw.Connection):
         for hook in (

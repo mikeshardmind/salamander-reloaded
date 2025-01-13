@@ -15,11 +15,13 @@ from functools import lru_cache, partial
 import arrow
 import discord
 import pytz
+from async_utils.corofunc_cache import lrucorocache
 from async_utils.task_cache import taskcache
 from discord import app_commands
 from discord.app_commands import Choice, Group
 from scheduler import DiscordBotScheduler, ScheduledDispatch
 
+from ._ac import ac_cache_transform
 from ._type_stuff import BotExports, DynButton, Reminder
 from .bot import Interaction
 from .settings_commands import get_user_tz
@@ -340,6 +342,7 @@ async def _autocomplete_hour(current: str, tzstr: str) -> list[Choice[str]]:
 
 
 @remind_at.autocomplete("hour")
+@lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]:
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
     return await _autocomplete_hour(current, tzstr)
@@ -404,6 +407,7 @@ async def _autocomplete_day(
 
 
 @remind_at.autocomplete("day")
+@lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
     year = itx.namespace.__dict__.get("year", None)
@@ -412,6 +416,7 @@ async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
 
 
 @remind_at.autocomplete("month")
+@lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]]:
     months = deque(range(1, 13))
     tzstr = get_user_tz(itx.client.conn, itx.user.id)
@@ -434,6 +439,7 @@ async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]
 
 
 @remind_at.autocomplete("year")
+@lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_year(itx: Interaction, current: str) -> list[Choice[int]]:
     if not current:
         return [Choice(name=str(y), value=y) for y in range(MIN_YEAR, MAX_YEAR + 1)]

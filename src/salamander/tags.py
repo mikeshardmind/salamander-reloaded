@@ -12,11 +12,12 @@ from itertools import chain
 
 import discord
 from apsw import Connection
-from async_utils.lru import LRU
+from async_utils.corofunc_cache import lrucorocache
 from base2048 import decode
 from discord.app_commands import Choice, Group, Range
 from msgspec import msgpack
 
+from ._ac import ac_cache_transform
 from ._type_stuff import BotExports
 from .bot import Interaction
 from .utils import b2048pack
@@ -59,7 +60,7 @@ class TagModal(discord.ui.Modal):
             return
         content = modal_components[0]["value"]
 
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.send_message(content="Saving tag.", ephemeral=True)
         cursor.execute(
             """
             INSERT INTO user_tags (user_id, tag_name, content)
@@ -69,7 +70,6 @@ class TagModal(discord.ui.Modal):
             """,
             {"author_id": author_id, "tag_name": tag_name, "content": content},
         )
-        await interaction.edit_original_response(content="Tag saved")
 
 
 @tag_group.command(name="create")
@@ -116,19 +116,10 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
     await itx.edit_original_response(content=msg)
 
 
-_cache: LRU[tuple[int, str], list[Choice[str]]] = LRU(1024)
-
-
 @user_tag_del.autocomplete("name")
 @user_tag_get.autocomplete("name")
+@lrucorocache(300, cache_transform=ac_cache_transform)
 async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
-    # TODO: smarter trie based cache? is it worth it?
-    key = (itx.user.id, current)
-    val = _cache.get(key, None)
-
-    if val is not None:
-        return val
-
     cursor = itx.client.conn.cursor()
     it = chain.from_iterable(
         cursor.execute(
@@ -137,11 +128,10 @@ async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
         FROM user_tags
         WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
         """,
-            key,
+            (itx.user.id, current),
         )
     )
-    _cache[key] = r = [Choice(name=c, value=c) for c in it]
-    return r
+    return [Choice(name=c, value=c) for c in it]
 
 
 exports = BotExports([tag_group], {"tag": TagModal})

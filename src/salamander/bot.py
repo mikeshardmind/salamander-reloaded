@@ -244,7 +244,7 @@ class Salamander(discord.AutoShardedClient):
         self._is_closing = True
         await self.sched.stop_gracefully()
         await super().close()
-        await self._last_interact_waterfall.stop(wait=True)
+        await self._last_interact_waterfall.stop()
 
     async def on_sinbad_scheduler_reminder(self, event: scheduler.ScheduledDispatch) -> None:
         if self._is_closing:

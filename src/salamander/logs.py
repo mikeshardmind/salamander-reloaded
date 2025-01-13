@@ -70,7 +70,6 @@ FORMATS = {
 
 
 class AnsiTermFormatter(logging.Formatter):
-
     def format(self, record: logging.LogRecord) -> str:  # noqa: PLR6301
         formatter = FORMATS.get(record.levelno)
         if formatter is None:

@@ -11,8 +11,10 @@ from __future__ import annotations
 import apsw
 import discord
 import pytz
+from async_utils.corofunc_cache import lrucorocache
 from async_utils.lru import LRU
 
+from ._ac import casefolded_ac_cache_transform
 from ._type_stuff import BotExports
 from .bot import Interaction
 
@@ -72,27 +74,14 @@ async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70])
         await itx.edit_original_response(content="Timezone set to %s" % zone)
 
 
-_close_zone_cache: LRU[str, list[str]] = LRU(512)
-
-
-# TODO: consider a trie
-def closest_zones(current: str) -> list[str]:
-    closest = _close_zone_cache.get(current, None)
-    if closest is not None:
-        return closest
-
+@tz_set.autocomplete("zone")
+@lrucorocache(ttl=None, maxsize=1024, cache_transform=casefolded_ac_cache_transform)
+async def zone_ac(itx: Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     common_zones = pytz.common_timezones_set
-
     c_insensitive = current.casefold()
     zone_matches = {z for z in common_zones if z.casefold().startswith(c_insensitive)}
-    if len(zone_matches) > 25:
-        return [*sorted(zone_matches)][:25]
-    return list(zone_matches)
-
-
-@tz_set.autocomplete("zone")
-async def zone_ac(itx: Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=x, value=x) for x in closest_zones(current)]
+    closest_zones = sorted(zone_matches)[:25]
+    return [discord.app_commands.Choice(name=x, value=x) for x in closest_zones]
 
 
 exports = BotExports(commands=[settings_group])

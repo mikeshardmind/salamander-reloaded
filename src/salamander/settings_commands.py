@@ -14,7 +14,7 @@ import pytz
 from async_utils.corofunc_cache import lrucorocache
 from async_utils.lru import LRU
 
-from ._ac import casefolded_ac_cache_transform
+from ._ac import cf_ac_cache_transform_no_user
 from ._type_stuff import BotExports
 from .bot import Interaction
 
@@ -75,7 +75,7 @@ async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70])
 
 
 @tz_set.autocomplete("zone")
-@lrucorocache(ttl=None, maxsize=1024, cache_transform=casefolded_ac_cache_transform)
+@lrucorocache(ttl=None, maxsize=1024, cache_transform=cf_ac_cache_transform_no_user)
 async def zone_ac(itx: Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     common_zones = pytz.common_timezones_set
     c_insensitive = current.casefold()

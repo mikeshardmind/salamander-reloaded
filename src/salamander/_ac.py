@@ -12,14 +12,21 @@ from .bot import Interaction
 
 
 def ac_cache_transform(
-    args: tuple[Interaction, str], kwds: dict[object, object]
-) -> tuple[tuple[int, str], dict[object, object]]:
+    args: tuple[Interaction, str], kwds: dict[str, object]
+) -> tuple[tuple[int, str], dict[str, object]]:
     itx, current = args
     return (itx.user.id, current), kwds
 
 
 def casefolded_ac_cache_transform(
-    args: tuple[Interaction, str], kwds: dict[object, object]
-) -> tuple[tuple[int, str], dict[object, object]]:
+    args: tuple[Interaction, str], kwds: dict[str, object]
+) -> tuple[tuple[int, str], dict[str, object]]:
     itx, current = args
     return (itx.user.id, current.casefold()), kwds
+
+
+def cf_ac_cache_transform_no_user(
+    args: tuple[Interaction, str], kwds: dict[str, object]
+) -> tuple[tuple[str], dict[str, object]]:
+    _itx, current = args
+    return (current.casefold(),), kwds

@@ -77,23 +77,23 @@ files = [
 
 [[package]]
 name = "apsw"
-version = "3.47.2.0"
+version = "3.48.0.0"
 requires_python = ">=3.9"
 summary = "Another Python SQLite Wrapper"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
 files = [
-    {file = "apsw-3.47.2.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:ffb9bcd623c3c8f48790e2133a8965e2da87621387ec9ce19e6d202877e9358d"},
-    {file = "apsw-3.47.2.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e451e299743ca7dcd3909e1b86c13fb2e33a611e19c7d53a8c5a49175f42d32b"},
-    {file = "apsw-3.47.2.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1ee743da80eb914ee0001e98920e531cc9018afbb6d4a5f7c69edf6959c1894c"},
-    {file = "apsw-3.47.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:46b5dd2cd4e3e4c8ec1d0f9d7436a2d5e8353801e921911197e49f492286e328"},
-    {file = "apsw-3.47.2.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cd041402f608e6ffaeb8eb711780af101400523a85b4f8fb60962bb6b4c4fe04"},
-    {file = "apsw-3.47.2.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:d904cb1739da3197269445499b2f1181cd2242a904c833b3ae7fd39802c12a56"},
-    {file = "apsw-3.47.2.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:f8726757a940554ae19a2c2cab141820509ba694a5a47b6148fc98f6accbb44c"},
-    {file = "apsw-3.47.2.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:85642997979522e7340932d58647a52c5a5d508471e5957a6c898721ad151f3c"},
-    {file = "apsw-3.47.2.0-cp313-cp313-win32.whl", hash = "sha256:6cd80f0218a27361f27cdcb82ef3850d9891faf15387b2073b39d1a2d3ba9a77"},
-    {file = "apsw-3.47.2.0-cp313-cp313-win_amd64.whl", hash = "sha256:271737c5a8ad8ff2bcf06d7682af0d8ac8f02b9573043b866861c367095b55dc"},
-    {file = "apsw-3.47.2.0.tar.gz", hash = "sha256:95d03c1236bb247d7b2241eda229bc9025fb6edb2b49257fc52a0ee64f5b36bc"},
+    {file = "apsw-3.48.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:08da1419aff759fe07989dac6eba182ed53ab60c4013b91ccf07f1732bf7535e"},
+    {file = "apsw-3.48.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:88be767467ca70ee3a8bbf87547d76b243547710c56252a7197d2d339427da8d"},
+    {file = "apsw-3.48.0.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1dd1a0953d24092006a1856c19763e1045746ee453a9c9d59ffb1f639a430016"},
+    {file = "apsw-3.48.0.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b5335dbad343250fc17cc6e0df4ae508512a8c55b3ce8449f415f5949d3da09b"},
+    {file = "apsw-3.48.0.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:aeb9a25c54114598b74afe080176230675df7035014e6d421e366bf6cbbedeb6"},
+    {file = "apsw-3.48.0.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:3d3feec6a5d0fae8aa45b60e4ae2ff385e635d447696132fae1814bb73c0d9ba"},
+    {file = "apsw-3.48.0.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:a529f9033847f0974f34761aef6bc2585c495447bd0bfbdd6c15c1e0c5d76d4b"},
+    {file = "apsw-3.48.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:0437dfac2813a8eb71046bbee965ed80b4bbe9c027242380c4adb253581ea76e"},
+    {file = "apsw-3.48.0.0-cp313-cp313-win32.whl", hash = "sha256:e7c245b20870c1c1bf7b80fdaf1e8831398f2401804fe58bee4a10e05255aa52"},
+    {file = "apsw-3.48.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:34f7156edee3b393655b9013139eb2cad540fa58745f8f92fa8740edf447f4e7"},
+    {file = "apsw-3.48.0.0.tar.gz", hash = "sha256:7c4492a55bd5c9f63821edd0162d6177f383b4733cfe421bd3bde5151e80c49b"},
 ]
 
 [[package]]
@@ -114,10 +114,10 @@ files = [
 
 [[package]]
 name = "async-utils"
-version = "2025.1.12"
+version = "2025.1.15"
 requires_python = ">=3.12.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "ac65c0d005e87ffb088776c722a509c025950893"
+revision = "c4cb2f960c8f088dd2146eadfb7d4baea7849d70"
 summary = "Various async utilities"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""

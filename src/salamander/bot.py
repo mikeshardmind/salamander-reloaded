@@ -8,7 +8,6 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import logging.handlers
 import re
@@ -16,7 +15,6 @@ from collections.abc import Sequence
 from datetime import timedelta
 from typing import Any, Self, override
 
-import apsw
 import discord
 import msgspec
 import scheduler
@@ -28,26 +26,13 @@ from async_utils.waterfall import Waterfall
 from discord import InteractionType, app_commands
 
 from ._type_stuff import HasExports, RawSubmittable, Reminder
+from .db import ConnWrap
 from .utils import platformdir_stuff, resolve_path_with_links
 
 log = logging.getLogger(__name__)
 
 
 type Interaction = discord.Interaction[Salamander]
-
-
-def _last_seen_update(conn: apsw.Connection, user_ids: Sequence[int]):
-    cursor = conn.cursor()
-    with conn:
-        cursor.executemany(
-            """
-            INSERT INTO discord_users (user_id, last_interaction)
-            VALUES (?, CURRENT_TIMESTAMP)
-            ON CONFLICT (user_id)
-            DO UPDATE SET last_interaction=excluded.last_interaction;
-            """,
-            ((user_id,) for user_id in user_ids),
-        )
 
 
 class VersionableTree(app_commands.CommandTree["Salamander"]):
@@ -66,7 +51,7 @@ class VersionableTree(app_commands.CommandTree["Salamander"]):
 
     @override
     async def interaction_check(self, interaction: Interaction) -> bool:
-        if interaction.client.is_blocked(interaction.user.id):
+        if await interaction.client.is_blocked(interaction.user.id):
             resp = interaction.response
             if interaction.type is InteractionType.application_command:
                 await resp.send_message("blocked, go away", ephemeral=True)
@@ -102,7 +87,7 @@ class Salamander(discord.AutoShardedClient):
         self,
         *args: Any,
         intents: discord.Intents | None = None,
-        conn: apsw.Connection,
+        conn: ConnWrap,
         initial_exts: list[HasExports],
         **kwargs: Any,
     ):
@@ -111,7 +96,7 @@ class Salamander(discord.AutoShardedClient):
         self.raw_modal_submits: dict[str, RawSubmittable] = {}
         self.raw_button_submits: dict[str, RawSubmittable] = {}
         self.tree = VersionableTree.from_salamander(self)
-        self.conn: apsw.Connection = conn
+        self.conn: ConnWrap = conn
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
@@ -139,7 +124,7 @@ class Salamander(discord.AutoShardedClient):
 
         with priority_context(priority):
             async with self._dm_sem:
-                if self.is_blocked(user_id):
+                if await self.is_blocked(user_id):
                     raise PreemptiveBlocked from None
                 try:
                     dm = await self.create_dm(discord.Object(user_id, type=discord.User))
@@ -148,14 +133,22 @@ class Salamander(discord.AutoShardedClient):
                 # todo: implement a threshold system for other http exceptions
                 except discord.NotFound:
                     # prevent deleted users from continuing to have stuff sent
-                    self.set_blocked(user_id, True)
+                    await self.set_blocked(user_id, True)
                     raise
 
     async def update_last_seen(self, user_ids: Sequence[int], /) -> None:
-        await asyncio.to_thread(_last_seen_update, self.conn, user_ids)
+        await self.conn.executemany(
+            """
+            INSERT INTO discord_users (user_id, last_interaction)
+            VALUES (?, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id)
+            DO UPDATE SET last_interaction=excluded.last_interaction;
+            """,
+            ((user_id,) for user_id in user_ids),
+        )
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
-        if not self.is_blocked(interaction.user.id):
+        if not await self.is_blocked(interaction.user.id):
             self._last_interact_waterfall.put(interaction.user.id)
         for typ, regex, mapping in (
             (InteractionType.modal_submit, modal_regex, self.raw_modal_submits),
@@ -168,28 +161,24 @@ class Salamander(discord.AutoShardedClient):
                     if rs := mapping.get(modal_name):
                         await rs.raw_submit(interaction, data)
 
-    def set_blocked(self, user_id: int, blocked: bool) -> None:
+    async def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO discord_users (user_id, is_blocked)
-                VALUES (?, ?)
-                ON CONFLICT (user_id)
-                DO UPDATE SET is_blocked=excluded.is_blocked
-                """,
-                (user_id, blocked),
-            )
+        await self.conn.execute(
+            """
+            INSERT INTO discord_users (user_id, is_blocked)
+            VALUES (?, ?)
+            ON CONFLICT (user_id)
+            DO UPDATE SET is_blocked=excluded.is_blocked
+            """,
+            (user_id, blocked),
+        )
 
-    def is_blocked(self, user_id: int) -> bool:
+    async def is_blocked(self, user_id: int) -> bool:
         blocked = self.block_cache.get(user_id, None)
         if blocked is not None:
             return blocked
 
-        cursor = self.conn.cursor()
-
-        row = cursor.execute(
+        row = await self.conn.execute(
             """
             SELECT EXISTS (
                 SELECT 1 FROM discord_users

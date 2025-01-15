@@ -8,7 +8,6 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-import apsw
 import discord
 import pytz
 from async_utils.corofunc_cache import lrucorocache
@@ -17,6 +16,7 @@ from async_utils.lru import LRU
 from ._ac import cf_ac_cache_transform_no_user
 from ._type_stuff import BotExports
 from .bot import Interaction
+from .db import ConnWrap
 
 settings_group = discord.app_commands.Group(
     name="settings",
@@ -27,15 +27,12 @@ settings_group = discord.app_commands.Group(
 _user_tz_lru: LRU[int, str] = LRU(128)
 
 
-def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
+async def get_user_tz(conn: ConnWrap, user_id: int) -> str:
     user_tz = _user_tz_lru.get(user_id, None)
     if user_tz is not None:
         return user_tz
 
-    cursor = conn.cursor()
-    # the update here is required for this to return
-    # even when it already exists, but this is "free" still.
-    row = cursor.execute(
+    row = await conn.execute(
         """
         INSERT INTO discord_users (user_id)
         VALUES (?)
@@ -60,10 +57,8 @@ async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70])
     except pytz.UnknownTimeZoneError:
         await send("Invalid timezone: %s" % zone, ephemeral=True)
     else:
-        conn: apsw.Connection = itx.client.conn
-        cursor = conn.cursor()
         await itx.response.defer(ephemeral=True)
-        cursor.execute(
+        await itx.client.conn.execute(
             """
             INSERT INTO discord_users (user_id, user_tz) VALUES(?, ?)
             ON CONFLICT (user_id) DO UPDATE SET user_tz=excluded.user_tz

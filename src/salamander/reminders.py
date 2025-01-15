@@ -124,7 +124,7 @@ async def remind_in(
     sched: DiscordBotScheduler = itx.client.sched
     await itx.response.defer(ephemeral=True)
     # strategy here is based on a mix of factors
-    raw_tz = get_user_tz(itx.client.conn, itx.user.id)
+    raw_tz = await get_user_tz(itx.client.conn, itx.user.id)
     user_tz = pytz.timezone(raw_tz)
     now = datetime.now(user_tz)
     when = now + timedelta(days=days, hours=hours, minutes=minutes)
@@ -231,7 +231,7 @@ async def remind_at(
 
     replacements = {k: v for k, v in replacements.items() if v >= 0}
 
-    raw_tz = get_user_tz(itx.client.conn, itx.user.id)
+    raw_tz = await get_user_tz(itx.client.conn, itx.user.id)
     user_tz = pytz.timezone(raw_tz)
     now = arrow.now(user_tz)
     try:
@@ -312,7 +312,7 @@ async def _autocomplete_minute(current: str, tzstr: str) -> list[Choice[int]]:
 
 @remind_at.autocomplete("minute")
 async def autocomplete_minute(itx: Interaction, current: str) -> list[Choice[int]]:
-    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    tzstr = await get_user_tz(itx.client.conn, itx.user.id)
     return await _autocomplete_minute(current, tzstr)
 
 
@@ -344,7 +344,7 @@ async def _autocomplete_hour(current: str, tzstr: str) -> list[Choice[str]]:
 @remind_at.autocomplete("hour")
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]:
-    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    tzstr = await get_user_tz(itx.client.conn, itx.user.id)
     return await _autocomplete_hour(current, tzstr)
 
 
@@ -409,7 +409,7 @@ async def _autocomplete_day(
 @remind_at.autocomplete("day")
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
-    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    tzstr = await get_user_tz(itx.client.conn, itx.user.id)
     year = itx.namespace.__dict__.get("year", None)
     month = itx.namespace.__dict__.get("month", None)
     return await _autocomplete_day(current, tzstr, year, month)
@@ -419,7 +419,7 @@ async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]]:
     months = deque(range(1, 13))
-    tzstr = get_user_tz(itx.client.conn, itx.user.id)
+    tzstr = await get_user_tz(itx.client.conn, itx.user.id)
     now = arrow.Arrow.now(pytz.timezone(tzstr))
     starting_month = now.datetime.month
     try:

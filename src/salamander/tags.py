@@ -11,7 +11,6 @@ from __future__ import annotations
 from itertools import chain
 
 import discord
-from apsw import Connection
 from async_utils.corofunc_cache import lrucorocache
 from base2048 import decode
 from discord.app_commands import Choice, Group, Range
@@ -45,7 +44,6 @@ class TagModal(discord.ui.Modal):
 
     @staticmethod
     async def raw_submit(interaction: Interaction, data: str) -> None:
-        cursor = interaction.client.conn.cursor()
         packed = decode(data)
         author_id, tag_name = msgpack.decode(packed, type=tuple[int, str])
 
@@ -61,7 +59,7 @@ class TagModal(discord.ui.Modal):
         content = modal_components[0]["value"]
 
         await interaction.response.send_message(content="Saving tag.", ephemeral=True)
-        cursor.execute(
+        await interaction.client.conn.execute(
             """
             INSERT INTO user_tags (user_id, tag_name, content)
             VALUES (:author_id, :tag_name, :content)
@@ -82,8 +80,7 @@ async def user_tag_create(itx: Interaction, name: Range[str, 1, 20]) -> None:
 @tag_group.command(name="get")
 async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Get some content"""
-    cursor = itx.client.conn.cursor()
-    row = cursor.execute(
+    row = await itx.client.conn.execute(
         """
         SELECT content FROM user_tags
         WHERE user_id = ? AND tag_name = ? LIMIT 1;
@@ -102,16 +99,14 @@ async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]) -> None:
 async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Delete a tag."""
     await itx.response.defer(ephemeral=True)
-    conn: Connection = itx.client.conn
-    cursor = conn.cursor()
-    row = cursor.execute(
+    row = await itx.client.conn.execute(
         """
         DELETE FROM user_tags
         WHERE user_id = ? AND tag_name = ?
         RETURNING tag_name
         """,
         (itx.user.id, name),
-    ).fetchall()
+    )
     msg = "Tag Deleted" if row else "No such tag"
     await itx.edit_original_response(content=msg)
 
@@ -120,9 +115,8 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
 @user_tag_get.autocomplete("name")
 @lrucorocache(300, cache_transform=ac_cache_transform)
 async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
-    cursor = itx.client.conn.cursor()
     it = chain.from_iterable(
-        cursor.execute(
+        await itx.client.conn.execute(
             """
         SELECT tag_name
         FROM user_tags

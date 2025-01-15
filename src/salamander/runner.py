@@ -28,6 +28,7 @@ import truststore
 from async_utils.sig_service import SignalService, SpecialExit
 
 from ._type_stuff import HasExports
+from .db import ConnWrap
 from .logs import with_logging
 from .utils import get_token, platformdir_stuff, store_token
 
@@ -48,8 +49,7 @@ def run_setup() -> None:
 
 
 def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signals]) -> None:
-    db_path = platformdir_stuff.user_data_path / "salamander.db"
-    conn = apsw.Connection(str(db_path))
+    db_path = str(platformdir_stuff.user_data_path / "salamander.db")
 
     loop.set_task_factory(asyncio.eager_task_factory)
     asyncio.set_event_loop(loop)
@@ -78,7 +78,7 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
 
     from .bot import Salamander
 
-    client = Salamander(conn=conn, connector=connector, initial_exts=inital_exts)
+    client = Salamander(conn=ConnWrap(db_path), connector=connector, initial_exts=inital_exts)
 
     sched = scheduler.DiscordBotScheduler(
         platformdir_stuff.user_data_path / "scheduled.db", use_threads=True
@@ -157,10 +157,6 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
 
         if not fut.cancelled():
             fut.result()
-
-    conn.pragma("analysis_limit", 400)
-    conn.pragma("optimize")
-    conn.close()
 
 
 def _wrapped_run_bot(

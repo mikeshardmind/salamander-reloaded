@@ -117,7 +117,7 @@ name = "async-utils"
 version = "2025.1.15"
 requires_python = ">=3.12.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "01e4891f746cab45a9dce324912039c8e49f208a"
+revision = "11d1e2cef48ea6f726269b441fc3e1dae9e003d4"
 summary = "Various async utilities"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""

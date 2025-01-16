@@ -8,33 +8,40 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator, AsyncIterator, Generator, Iterable, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from typing import Any
 
 import apsw
-from async_utils.gen_transform import sync_to_async_gen
+from async_utils.gen_transform import ACTX, sync_to_async_gen
 
 type SQLiteValue = int | float | bytes | str | None
 type SQLiteValues = tuple[SQLiteValue, ...]
 type Bindings = Sequence[SQLiteValue | apsw.zeroblob] | Mapping[str, SQLiteValue | apsw.zeroblob]
 
 
+async def _a(ctx: ACTX[Any]) -> list[Any]:
+    async with ctx as c:
+        return [v async for v in c]
+    return []
+
+
 class ExecuteWrapper:
-    def __init__(self, _c: AsyncGenerator[Any]):
+    def __init__(self, _c: ACTX[Any]):
         self._c = _c
 
     def __await__(self) -> Generator[Any, Any, list[Any]]:
-        return self._a().__await__()
+        return _a(self._c).__await__()
 
-    async def _a(self) -> list[Any]:
-        return [_ async for _ in self._c]
+    def __aenter__(self):
+        return self._c.__aenter__()
 
-    def __aiter__(self) -> AsyncIterator[Any]:
-        return aiter(self._c)
+    async def __aexit__(self, et: type[BaseException] | None, ev: BaseException | None, tb: object):
+        return await self._c.__aexit__(et, ev, tb)
 
     async def fetchone(self) -> Any | None:
-        async for val in self:
-            return val
+        async with self as g:
+            async for val in g:
+                return val
         return None
 
 

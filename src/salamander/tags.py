@@ -115,17 +115,18 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
 @user_tag_get.autocomplete("name")
 @lrucorocache(300, cache_transform=ac_cache_transform)
 async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
-    it = chain.from_iterable(
-        await itx.client.conn.execute(
-            """
+
+    async with itx.client.conn.execute(
+        """
         SELECT tag_name
         FROM user_tags
         WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
         """,
-            (itx.user.id, current),
-        )
-    )
-    return [Choice(name=c, value=c) for c in it]
+        (itx.user.id, current),
+    ) as gen:
+        it = [a async for a in gen]
+
+    return [Choice(name=c, value=c) for c in chain.from_iterable(it)]
 
 
 exports = BotExports([tag_group], {"tag": TagModal})

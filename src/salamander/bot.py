@@ -60,14 +60,14 @@ class VersionableTree(app_commands.CommandTree["Salamander"]):
             return False
         return True
 
-    async def get_hash(self, tree: app_commands.CommandTree) -> bytes:
+    async def get_hash(self) -> bytes:
         coms = sorted(self._get_all_commands(guild=None), key=lambda c: c.qualified_name)
 
         translator = self.translator
         if translator:
-            payload = [await c.get_translated_payload(tree, translator) for c in coms]
+            payload = [await c.get_translated_payload(self, translator) for c in coms]
         else:
-            payload = [c.to_dict(tree) for c in coms]
+            payload = [c.to_dict(self) for c in coms]
 
         return xxhash.xxh64_digest(msgspec.msgpack.encode(payload), seed=0)
 
@@ -207,7 +207,8 @@ class Salamander(discord.AutoShardedClient):
 
         path = platformdir_stuff.user_cache_path / "tree.hash"
         path = resolve_path_with_links(path)
-        tree_hash = await self.tree.get_hash(self.tree)
+        tree_hash = await self.tree.get_hash()
+        log.info("Command tree hash digest: %s", tree_hash.hex())
         with path.open(mode="r+b") as fp:
             data = fp.read()
             if data != tree_hash:

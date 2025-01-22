@@ -27,9 +27,9 @@ type SQLiteValue = int | float | bytes | str | None
 type SQLiteValues = tuple[SQLiteValue, ...]
 type Bindings = Sequence[SQLiteValue | apsw.zeroblob] | Mapping[str, SQLiteValue | apsw.zeroblob]
 
-type AENTER = Callable[[], Coroutine[Any, Any, AsyncGenerator[Any | None]]]
+type AENTER = Callable[[], Coroutine[Any, Any, AsyncGenerator[Any]]]
 type AEXIT = Callable[
-    [type[BaseException] | None, BaseException | None, object], Coroutine[Any, Any, bool]
+    [type[BaseException] | None, BaseException | None, object], Coroutine[Any, Any, None]
 ]
 
 

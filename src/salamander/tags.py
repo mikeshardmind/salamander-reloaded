@@ -113,7 +113,6 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
 @user_tag_get.autocomplete("name")
 @lrucorocache(300, cache_transform=ac_cache_transform)
 async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
-
     async with itx.client.conn.execute(
         """
         SELECT tag_name

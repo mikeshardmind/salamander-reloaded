@@ -114,10 +114,10 @@ files = [
 
 [[package]]
 name = "async-utils"
-version = "2025.1.17"
+version = "2025.1.24"
 requires_python = ">=3.12.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "36c3314d50f85b987727a807da00527532380b24"
+revision = "63b63ecc9bf4307c4c7eb55066f47074770f251d"
 summary = "Various async utilities"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""

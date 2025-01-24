@@ -8,16 +8,7 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 
 from __future__ import annotations
 
-from collections.abc import (
-    AsyncGenerator,
-    Callable,
-    Coroutine,
-    Generator,
-    Iterable,
-    Mapping,
-    Sequence,
-)
-from operator import attrgetter
+from collections.abc import AsyncGenerator, Coroutine, Generator, Iterable, Mapping, Sequence
 from typing import Any
 
 import apsw
@@ -27,16 +18,10 @@ type SQLiteValue = int | float | bytes | str | None
 type SQLiteValues = tuple[SQLiteValue, ...]
 type Bindings = Sequence[SQLiteValue | apsw.zeroblob] | Mapping[str, SQLiteValue | apsw.zeroblob]
 
-type AENTER = Callable[[], Coroutine[Any, Any, AsyncGenerator[Any]]]
-type AEXIT = Callable[
-    [type[BaseException] | None, BaseException | None, object], Coroutine[Any, Any, None]
-]
-
 
 async def _a(ctx: ACTX[Any]) -> list[Any]:
     async with ctx as c:
         return [v async for v in c]
-    return []
 
 
 class ExecuteWrapper:
@@ -46,8 +31,16 @@ class ExecuteWrapper:
     def __await__(self) -> Generator[Any, Any, list[Any]]:
         return (yield from _a(self._c).__await__())
 
-    __aenter__: AENTER = property(attrgetter("_c.__aenter__"))  # pyright: ignore[reportAssignmentType]
-    __aexit__: AEXIT = property(attrgetter("_c.__aexit__"))  # pyright: ignore[reportAssignmentType]
+    def __aenter__(self) -> Coroutine[Any, Any, AsyncGenerator[Any]]:
+        return self._c.__aenter__()
+
+    def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: object,
+    ) -> Coroutine[Any, Any, None]:
+        return self._c.__aexit__(exc_type, exc_value, traceback)
 
     async def fetchone(self) -> Any | None:
         async with self as g:

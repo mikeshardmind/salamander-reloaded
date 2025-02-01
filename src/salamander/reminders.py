@@ -28,6 +28,7 @@ from .settings_commands import get_user_tz
 from .utils import b2048pack, b2048unpack
 
 reminder_group = Group(name="remindme", description="Make reminders for later.")
+timestamp_group = Group(name="timestamp", description="Make timestamps in the future.")
 
 
 TRASH_EMOJI = "\N{WASTEBASKET}\N{VARIATION SELECTOR-16}"
@@ -155,6 +156,68 @@ async def remind_in(
     await itx.edit_original_response(content=f"Reminder scheduled for {formatted_ts}")
 
 
+@timestamp_group.command(name="in", description="Timestamp in an amount of time")
+async def timestamp_in(
+    itx: Interaction,
+    days: app_commands.Range[int, 0, 365] = 0,
+    hours: app_commands.Range[int, 0, 72] = 0,
+    minutes: app_commands.Range[int, 0, 59] = 0,
+) -> None:
+    raw_tz = await get_user_tz(itx.client.conn, itx.user.id)
+    user_tz = pytz.timezone(raw_tz)
+    now = datetime.now(user_tz)
+    when = now + timedelta(days=days, hours=hours, minutes=minutes)
+    if days:
+        # Uses same normalization rules as reminders
+        when = user_tz.normalize(when)
+
+    formatted_ts = discord.utils.format_dt(when, style="f")
+    await itx.response.send_message(content=formatted_ts)
+
+
+@timestamp_group.command(name="at", description="Timestamp at a specific time")
+async def timestamp_at(
+    itx: Interaction,
+    year: app_commands.Range[int, MIN_YEAR, MAX_YEAR] = -1,
+    month: app_commands.Range[int, 1, 12] = -1,
+    day: app_commands.Range[int, 1, 31] = -1,
+    hour: app_commands.Range[str, 0, 5] = "",
+    minute: app_commands.Range[int, 0, 59] = -1,
+) -> None:
+    if hour:
+        inthour = parse_hour(hour)
+        if inthour is None:
+            await itx.response.send_message("Not a valid hour", ephemeral=True)
+            return
+    else:
+        inthour = -1
+
+    replacements = {
+        "year": year,
+        "month": month,
+        "day": day,
+        "hour": inthour,
+        "minute": minute,
+    }
+
+    replacements = {k: v for k, v in replacements.items() if v >= 0}
+
+    raw_tz = await get_user_tz(itx.client.conn, itx.user.id)
+    user_tz = pytz.timezone(raw_tz)
+    now = arrow.now(user_tz)
+    try:
+        when = now.replace(**replacements)
+    except ValueError:
+        await itx.response.send_message("That isn't a valid calendar date", ephemeral=True)
+        return
+    if when < now:
+        await itx.response.send_message("That date is in the past!", ephemeral=True)
+        return
+
+    formatted_ts = discord.utils.format_dt(when.datetime, style="f")
+    await itx.response.send_message(formatted_ts)
+
+
 def parse_hour(hour: str) -> int | None:
     hour = hour.replace(" ", "")
 
@@ -215,11 +278,13 @@ async def remind_at(
     content: str
         Optional text to include alongside the reminder link.
     """
-
-    inthour = parse_hour(hour)
-    if inthour is None:
-        await itx.response.send_message("Not a valid hour")
-        return
+    if hour:
+        inthour = parse_hour(hour)
+        if inthour is None:
+            await itx.response.send_message("Not a valid hour", ephemeral=True)
+            return
+    else:
+        inthour = -1
 
     replacements = {
         "year": year,
@@ -341,6 +406,7 @@ async def _autocomplete_hour(current: str, tzstr: str) -> list[Choice[str]]:
     return []
 
 
+@timestamp_at.autocomplete("hour")
 @remind_at.autocomplete("hour")
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_hour(itx: Interaction, current: str) -> list[Choice[str]]:
@@ -406,6 +472,7 @@ async def _autocomplete_day(
     return []
 
 
+@timestamp_at.autocomplete("day")
 @remind_at.autocomplete("day")
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
@@ -415,6 +482,7 @@ async def autocomplete_day(itx: Interaction, current: str) -> list[Choice[int]]:
     return await _autocomplete_day(current, tzstr, year, month)
 
 
+@timestamp_at.autocomplete("month")
 @remind_at.autocomplete("month")
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]]:
@@ -438,6 +506,7 @@ async def autocomplete_month(itx: Interaction, current: str) -> list[Choice[int]
     return []
 
 
+@timestamp_at.autocomplete("year")
 @remind_at.autocomplete("year")
 @lrucorocache(60, cache_transform=ac_cache_transform)
 async def autocomplete_year(itx: Interaction, current: str) -> list[Choice[int]]:
@@ -452,6 +521,6 @@ async def autocomplete_year(itx: Interaction, current: str) -> list[Choice[int]]
 
 
 exports = BotExports(
-    commands=[reminder_group],
+    commands=[reminder_group, timestamp_group],
     raw_button_submits={"rmndrlst": ReminderView},
 )

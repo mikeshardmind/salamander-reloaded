@@ -93,11 +93,11 @@ class NoteModal(discord.ui.Modal):
             await interaction.edit_original_response(content=msg)
 
 
-async def get_user_notes(conn: ConnWrap, author_id: int, user_id: int) -> tuple[str, ...]:
+async def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple[str, ...]:
     if nl := _user_notes_lru.get((author_id, user_id), None):
         return nl
 
-    notes = await conn.execute(
+    notes = conn.execute(
         """
         SELECT content, created_at FROM user_notes
         WHERE author_id = ? AND target_id = ?
@@ -153,7 +153,7 @@ class NotesView:
         first: bool = False,
         defer_used: bool = False,
     ) -> None:
-        fetched = await get_user_notes(conn, user_id, target_id)
+        fetched = await get_user_notes(itx.client.read_conn, user_id, target_id)
 
         edit = itx.edit_original_response if defer_used else itx.response.edit_message
         send = edit if defer_used else partial(itx.response.send_message, ephemeral=True)

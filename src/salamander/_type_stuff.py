@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Coroutine
 from typing import Any, Literal, NamedTuple, Protocol
 
+import apsw
 import msgspec
 from discord import Interaction as DInter
 from discord import app_commands, ui
@@ -22,6 +23,7 @@ from .db import ConnWrap
 class SalamanderLike(Protocol):
     sched: DiscordBotScheduler
     conn: ConnWrap
+    read_conn: apsw.Connection
 
 
 class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):

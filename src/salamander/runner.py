@@ -78,7 +78,10 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
 
     from .bot import Salamander
 
-    client = Salamander(conn=ConnWrap(db_path), connector=connector, initial_exts=inital_exts)
+    read_conn = apsw.Connection(db_path, flags=apsw.SQLITE_OPEN_READONLY)
+    client = Salamander(
+        conn=ConnWrap(db_path), read_conn=read_conn, connector=connector, initial_exts=inital_exts
+    )
 
     sched = scheduler.DiscordBotScheduler(
         platformdir_stuff.user_data_path / "scheduled.db", use_threads=True

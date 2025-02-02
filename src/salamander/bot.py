@@ -15,6 +15,7 @@ from collections.abc import Sequence
 from datetime import timedelta
 from typing import Any, Self, override
 
+import apsw
 import discord
 import msgspec
 import scheduler
@@ -88,6 +89,7 @@ class Salamander(discord.AutoShardedClient):
         *args: Any,
         intents: discord.Intents | None = None,
         conn: ConnWrap,
+        read_conn: apsw.Connection,
         initial_exts: list[HasExports],
         **kwargs: Any,
     ):
@@ -97,6 +99,7 @@ class Salamander(discord.AutoShardedClient):
         self.raw_button_submits: dict[str, RawSubmittable] = {}
         self.tree = VersionableTree.from_salamander(self)
         self.conn: ConnWrap = conn
+        self.read_conn: apsw.Connection = read_conn
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = _missing
         self.initial_exts: list[HasExports] = initial_exts
@@ -178,7 +181,7 @@ class Salamander(discord.AutoShardedClient):
         if blocked is not None:
             return blocked
 
-        row = await self.conn.execute(
+        row = self.read_conn.execute(
             """
             SELECT EXISTS (
                 SELECT 1 FROM discord_users

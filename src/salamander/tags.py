@@ -78,7 +78,7 @@ async def user_tag_create(itx: Interaction, name: Range[str, 1, 20]) -> None:
 @tag_group.command(name="get")
 async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Get some content"""
-    row = await itx.client.conn.execute(
+    row = itx.client.read_conn.execute(
         """
         SELECT content FROM user_tags
         WHERE user_id = ? AND tag_name = ? LIMIT 1;
@@ -113,15 +113,15 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
 @user_tag_get.autocomplete("name")
 @lrucorocache(300, cache_transform=ac_cache_transform)
 async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
-    async with itx.client.conn.execute(
+    cursor = itx.client.read_conn.execute(
         """
         SELECT tag_name
         FROM user_tags
         WHERE user_id = ? AND tag_name LIKE ? || '%' LIMIT 25
         """,
         (itx.user.id, current),
-    ) as cursor:
-        return [Choice(name=name, value=value) async for (name, value) in cursor]
+    )
+    return [Choice(name=name, value=value) for (name, value) in cursor]
 
 
 exports = BotExports([tag_group], {"tag": TagModal})

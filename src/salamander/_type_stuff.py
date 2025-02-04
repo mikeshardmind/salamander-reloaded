@@ -17,12 +17,10 @@ from discord import Interaction as DInter
 from discord import app_commands, ui
 from scheduler import DiscordBotScheduler
 
-from .db import ConnWrap
-
 
 class SalamanderLike(Protocol):
     sched: DiscordBotScheduler
-    conn: ConnWrap
+    conn: apsw.Connection
     read_conn: apsw.Connection
 
 

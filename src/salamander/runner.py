@@ -28,7 +28,6 @@ import truststore
 from async_utils.sig_service import SignalService, SpecialExit
 
 from ._type_stuff import HasExports
-from .db import ConnWrap
 from .logs import with_logging
 from .utils import get_token, platformdir_stuff, store_token
 
@@ -79,8 +78,9 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
     from .bot import Salamander
 
     read_conn = apsw.Connection(db_path, flags=apsw.SQLITE_OPEN_READONLY)
+    rw_conn = apsw.Connection(db_path)
     client = Salamander(
-        conn=ConnWrap(db_path), read_conn=read_conn, connector=connector, initial_exts=inital_exts
+        conn=rw_conn, read_conn=read_conn, connector=connector, initial_exts=inital_exts
     )
 
     sched = scheduler.DiscordBotScheduler(

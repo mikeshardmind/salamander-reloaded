@@ -57,15 +57,16 @@ class TagModal(discord.ui.Modal):
         content = modal_components[0]["value"]
 
         await interaction.response.send_message(content="Saving tag.", ephemeral=True)
-        await interaction.client.conn.execute(
-            """
-            INSERT INTO user_tags (user_id, tag_name, content)
-            VALUES (:author_id, :tag_name, :content)
-            ON CONFLICT (user_id, tag_name)
-            DO UPDATE SET content=excluded.content;
-            """,
-            {"author_id": author_id, "tag_name": tag_name, "content": content},
-        )
+        with interaction.client.conn:
+            interaction.client.conn.execute(
+                """
+                INSERT INTO user_tags (user_id, tag_name, content)
+                VALUES (:author_id, :tag_name, :content)
+                ON CONFLICT (user_id, tag_name)
+                DO UPDATE SET content=excluded.content;
+                """,
+                {"author_id": author_id, "tag_name": tag_name, "content": content},
+            ).get()
 
 
 @tag_group.command(name="create")
@@ -97,14 +98,15 @@ async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]) -> None:
 async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Delete a tag."""
     await itx.response.defer(ephemeral=True)
-    row = await itx.client.conn.execute(
-        """
-        DELETE FROM user_tags
-        WHERE user_id = ? AND tag_name = ?
-        RETURNING tag_name
-        """,
-        (itx.user.id, name),
-    )
+    with itx.client.conn:
+        row = itx.client.conn.execute(
+            """
+            DELETE FROM user_tags
+            WHERE user_id = ? AND tag_name = ?
+            RETURNING tag_name
+            """,
+            (itx.user.id, name),
+        ).get()
     msg = "Tag Deleted" if row else "No such tag"
     await itx.edit_original_response(content=msg)
 

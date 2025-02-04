@@ -27,7 +27,6 @@ from async_utils.waterfall import Waterfall
 from discord import InteractionType, app_commands
 
 from ._type_stuff import HasExports, RawSubmittable, Reminder
-from .db import ConnWrap
 from .utils import platformdir_stuff, resolve_path_with_links
 
 log = logging.getLogger(__name__)
@@ -88,7 +87,7 @@ class Salamander(discord.AutoShardedClient):
         self,
         *args: Any,
         intents: discord.Intents | None = None,
-        conn: ConnWrap,
+        conn: apsw.Connection,
         read_conn: apsw.Connection,
         initial_exts: list[HasExports],
         **kwargs: Any,
@@ -98,7 +97,7 @@ class Salamander(discord.AutoShardedClient):
         self.raw_modal_submits: dict[str, RawSubmittable] = {}
         self.raw_button_submits: dict[str, RawSubmittable] = {}
         self.tree = VersionableTree.from_salamander(self)
-        self.conn: ConnWrap = conn
+        self.conn: apsw.Connection = conn
         self.read_conn: apsw.Connection = read_conn
         self.block_cache: LRU[int, bool] = LRU(512)
         self.sched: scheduler.DiscordBotScheduler = _missing
@@ -140,15 +139,16 @@ class Salamander(discord.AutoShardedClient):
                     raise
 
     async def update_last_seen(self, user_ids: Sequence[int], /) -> None:
-        await self.conn.executemany(
-            """
-            INSERT INTO discord_users (user_id, last_interaction)
-            VALUES (?, CURRENT_TIMESTAMP)
-            ON CONFLICT (user_id)
-            DO UPDATE SET last_interaction=excluded.last_interaction;
-            """,
-            ((user_id,) for user_id in user_ids),
-        )
+        with self.conn:
+            self.conn.executemany(
+                """
+                INSERT INTO discord_users (user_id, last_interaction)
+                VALUES (?, CURRENT_TIMESTAMP)
+                ON CONFLICT (user_id)
+                DO UPDATE SET last_interaction=excluded.last_interaction;
+                """,
+                ((user_id,) for user_id in user_ids),
+            )
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
         if not await self.is_blocked(interaction.user.id):
@@ -166,15 +166,16 @@ class Salamander(discord.AutoShardedClient):
 
     async def set_blocked(self, user_id: int, blocked: bool) -> None:
         self.block_cache[user_id] = blocked
-        await self.conn.execute(
-            """
-            INSERT INTO discord_users (user_id, is_blocked)
-            VALUES (?, ?)
-            ON CONFLICT (user_id)
-            DO UPDATE SET is_blocked=excluded.is_blocked
-            """,
-            (user_id, blocked),
-        )
+        with self.conn:
+            self.conn.execute(
+                """
+                INSERT INTO discord_users (user_id, is_blocked)
+                VALUES (?, ?)
+                ON CONFLICT (user_id)
+                DO UPDATE SET is_blocked=excluded.is_blocked
+                """,
+                (user_id, blocked),
+            )
 
     async def is_blocked(self, user_id: int) -> bool:
         blocked = self.block_cache.get(user_id, None)

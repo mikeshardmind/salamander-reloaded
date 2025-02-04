@@ -20,7 +20,6 @@ from discord import app_commands
 
 from ._type_stuff import BotExports, DynButton
 from .bot import Interaction
-from .db import ConnWrap
 from .utils import b2048pack
 
 _user_notes_lru: LRU[tuple[int, int], tuple[str, str]] = LRU(128)
@@ -69,17 +68,18 @@ class NoteModal(discord.ui.Modal):
         conn = interaction.client.conn
 
         try:
-            await conn.execute(
-                """
-                INSERT INTO user_notes (author_id, target_id, content)
-                VALUES (:author_id, :target_id, :content);
-                """,
-                {
-                    "author_id": author_id,
-                    "target_id": target_id,
-                    "content": content,
-                },
-            )
+            with conn:
+                conn.execute(
+                    """
+                    INSERT INTO user_notes (author_id, target_id, content)
+                    VALUES (:author_id, :target_id, :content);
+                    """,
+                    {
+                        "author_id": author_id,
+                        "target_id": target_id,
+                        "content": content,
+                    },
+                ).get()
         except apsw.ConstraintError:
             too_many = True
         else:
@@ -135,7 +135,7 @@ class NotesView:
     async def start(
         cls,
         itx: Interaction,
-        conn: ConnWrap,
+        conn: apsw.Connection,
         user_id: int,
         target_id: int,
     ) -> None:
@@ -145,7 +145,7 @@ class NotesView:
     async def edit_to_current_index(
         cls,
         itx: Interaction,
-        conn: ConnWrap,
+        conn: apsw.Connection,
         user_id: int,
         target_id: int,
         index: int,
@@ -217,14 +217,14 @@ class NotesView:
         await interaction.response.defer(ephemeral=True)
         if action == "delete":
             _user_notes_lru.remove((user_id, target_id))
-
-            await conn.execute(
-                """
-                DELETE FROM user_notes
-                WHERE author_id = ? AND target_id = ? AND created_at = ?
-                """,
-                (user_id, target_id, ts),
-            )
+            with conn:
+                conn.execute(
+                    """
+                    DELETE FROM user_notes
+                    WHERE author_id = ? AND target_id = ? AND created_at = ?
+                    """,
+                    (user_id, target_id, ts),
+                ).get()
 
         await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx, defer_used=True)
 

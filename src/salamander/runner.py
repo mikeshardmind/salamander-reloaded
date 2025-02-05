@@ -161,6 +161,11 @@ def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signal
         if not fut.cancelled():
             fut.result()
 
+        read_conn.close()
+        rw_conn.pragma("analysis_limit", 400)
+        rw_conn.pragma("optimize")
+        rw_conn.close()
+
 
 def _wrapped_run_bot(
     loop: asyncio.AbstractEventLoop,

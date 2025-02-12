@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:713b928fba07e115f0fa311f834ce952ce2ebdbbb92a5b27b53926462ae2af07"
+content_hash = "sha256:6690db5ea3f2f042e5c40e655d95b262e985bba8be99a1c1897addb734a6c6f3"
 
 [[metadata.targets]]
 requires_python = "~=3.13.0"
@@ -26,7 +26,7 @@ files = [
 
 [[package]]
 name = "aiohttp"
-version = "3.11.11"
+version = "3.11.12"
 requires_python = ">=3.9"
 summary = "Async http client/server framework (asyncio)"
 groups = ["default"]
@@ -42,22 +42,23 @@ dependencies = [
     "yarl<2.0,>=1.17.0",
 ]
 files = [
-    {file = "aiohttp-3.11.11-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:541d823548ab69d13d23730a06f97460f4238ad2e5ed966aaf850d7c369782d9"},
-    {file = "aiohttp-3.11.11-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:929f3ed33743a49ab127c58c3e0a827de0664bfcda566108989a14068f820194"},
-    {file = "aiohttp-3.11.11-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:0882c2820fd0132240edbb4a51eb8ceb6eef8181db9ad5291ab3332e0d71df5f"},
-    {file = "aiohttp-3.11.11-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b63de12e44935d5aca7ed7ed98a255a11e5cb47f83a9fded7a5e41c40277d104"},
-    {file = "aiohttp-3.11.11-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:aa54f8ef31d23c506910c21163f22b124facb573bff73930735cf9fe38bf7dff"},
-    {file = "aiohttp-3.11.11-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:a344d5dc18074e3872777b62f5f7d584ae4344cd6006c17ba12103759d407af3"},
-    {file = "aiohttp-3.11.11-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0b7fb429ab1aafa1f48578eb315ca45bd46e9c37de11fe45c7f5f4138091e2f1"},
-    {file = "aiohttp-3.11.11-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c341c7d868750e31961d6d8e60ff040fb9d3d3a46d77fd85e1ab8e76c3e9a5c4"},
-    {file = "aiohttp-3.11.11-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ed9ee95614a71e87f1a70bc81603f6c6760128b140bc4030abe6abaa988f1c3d"},
-    {file = "aiohttp-3.11.11-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:de8d38f1c2810fa2a4f1d995a2e9c70bb8737b18da04ac2afbf3971f65781d87"},
-    {file = "aiohttp-3.11.11-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:a9b7371665d4f00deb8f32208c7c5e652059b0fda41cf6dbcac6114a041f1cc2"},
-    {file = "aiohttp-3.11.11-cp313-cp313-musllinux_1_2_s390x.whl", hash = "sha256:620598717fce1b3bd14dd09947ea53e1ad510317c85dda2c9c65b622edc96b12"},
-    {file = "aiohttp-3.11.11-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:bf8d9bfee991d8acc72d060d53860f356e07a50f0e0d09a8dfedea1c554dd0d5"},
-    {file = "aiohttp-3.11.11-cp313-cp313-win32.whl", hash = "sha256:9d73ee3725b7a737ad86c2eac5c57a4a97793d9f442599bea5ec67ac9f4bdc3d"},
-    {file = "aiohttp-3.11.11-cp313-cp313-win_amd64.whl", hash = "sha256:c7a06301c2fb096bdb0bd25fe2011531c1453b9f2c163c8031600ec73af1cc99"},
-    {file = "aiohttp-3.11.11.tar.gz", hash = "sha256:bb49c7f1e6ebf3821a42d81d494f538107610c3a705987f53068546b0e90303e"},
+    {file = "aiohttp-3.11.12-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:413ad794dccb19453e2b97c2375f2ca3cdf34dc50d18cc2693bd5aed7d16f4b9"},
+    {file = "aiohttp-3.11.12-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:4a93d28ed4b4b39e6f46fd240896c29b686b75e39cc6992692e3922ff6982b4c"},
+    {file = "aiohttp-3.11.12-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:d589264dbba3b16e8951b6f145d1e6b883094075283dafcab4cdd564a9e353a0"},
+    {file = "aiohttp-3.11.12-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e5148ca8955affdfeb864aca158ecae11030e952b25b3ae15d4e2b5ba299bad2"},
+    {file = "aiohttp-3.11.12-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:525410e0790aab036492eeea913858989c4cb070ff373ec3bc322d700bdf47c1"},
+    {file = "aiohttp-3.11.12-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:9bd8695be2c80b665ae3f05cb584093a1e59c35ecb7d794d1edd96e8cc9201d7"},
+    {file = "aiohttp-3.11.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f0203433121484b32646a5f5ea93ae86f3d9559d7243f07e8c0eab5ff8e3f70e"},
+    {file = "aiohttp-3.11.12-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:40cd36749a1035c34ba8d8aaf221b91ca3d111532e5ccb5fa8c3703ab1b967ed"},
+    {file = "aiohttp-3.11.12-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:a7442662afebbf7b4c6d28cb7aab9e9ce3a5df055fc4116cc7228192ad6cb484"},
+    {file = "aiohttp-3.11.12-cp313-cp313-musllinux_1_2_armv7l.whl", hash = "sha256:8a2fb742ef378284a50766e985804bd6adb5adb5aa781100b09befdbfa757b65"},
+    {file = "aiohttp-3.11.12-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:2cee3b117a8d13ab98b38d5b6bdcd040cfb4181068d05ce0c474ec9db5f3c5bb"},
+    {file = "aiohttp-3.11.12-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:f6a19bcab7fbd8f8649d6595624856635159a6527861b9cdc3447af288a00c00"},
+    {file = "aiohttp-3.11.12-cp313-cp313-musllinux_1_2_s390x.whl", hash = "sha256:e4cecdb52aaa9994fbed6b81d4568427b6002f0a91c322697a4bfcc2b2363f5a"},
+    {file = "aiohttp-3.11.12-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:30f546358dfa0953db92ba620101fefc81574f87b2346556b90b5f3ef16e55ce"},
+    {file = "aiohttp-3.11.12-cp313-cp313-win32.whl", hash = "sha256:ce1bb21fc7d753b5f8a5d5a4bae99566386b15e716ebdb410154c16c91494d7f"},
+    {file = "aiohttp-3.11.12-cp313-cp313-win_amd64.whl", hash = "sha256:f7914ab70d2ee8ab91c13e5402122edbc77821c66d2758abb53aabe87f013287"},
+    {file = "aiohttp-3.11.12.tar.gz", hash = "sha256:7603ca26d75b1b86160ce1bbe2787a0b706e592af5b2504e12caa88a217767b0"},
 ]
 
 [[package]]
@@ -77,23 +78,23 @@ files = [
 
 [[package]]
 name = "apsw"
-version = "3.48.0.0"
+version = "3.49.0.0"
 requires_python = ">=3.9"
 summary = "Another Python SQLite Wrapper"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
 files = [
-    {file = "apsw-3.48.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:08da1419aff759fe07989dac6eba182ed53ab60c4013b91ccf07f1732bf7535e"},
-    {file = "apsw-3.48.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:88be767467ca70ee3a8bbf87547d76b243547710c56252a7197d2d339427da8d"},
-    {file = "apsw-3.48.0.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1dd1a0953d24092006a1856c19763e1045746ee453a9c9d59ffb1f639a430016"},
-    {file = "apsw-3.48.0.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b5335dbad343250fc17cc6e0df4ae508512a8c55b3ce8449f415f5949d3da09b"},
-    {file = "apsw-3.48.0.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:aeb9a25c54114598b74afe080176230675df7035014e6d421e366bf6cbbedeb6"},
-    {file = "apsw-3.48.0.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:3d3feec6a5d0fae8aa45b60e4ae2ff385e635d447696132fae1814bb73c0d9ba"},
-    {file = "apsw-3.48.0.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:a529f9033847f0974f34761aef6bc2585c495447bd0bfbdd6c15c1e0c5d76d4b"},
-    {file = "apsw-3.48.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:0437dfac2813a8eb71046bbee965ed80b4bbe9c027242380c4adb253581ea76e"},
-    {file = "apsw-3.48.0.0-cp313-cp313-win32.whl", hash = "sha256:e7c245b20870c1c1bf7b80fdaf1e8831398f2401804fe58bee4a10e05255aa52"},
-    {file = "apsw-3.48.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:34f7156edee3b393655b9013139eb2cad540fa58745f8f92fa8740edf447f4e7"},
-    {file = "apsw-3.48.0.0.tar.gz", hash = "sha256:7c4492a55bd5c9f63821edd0162d6177f383b4733cfe421bd3bde5151e80c49b"},
+    {file = "apsw-3.49.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:f655d3629f8e6401d973155d40aed364e4955474748bc90cdc5e5124aae52c8c"},
+    {file = "apsw-3.49.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:8202578a64122c60fef168c3b491bc1990b780dee701e2b08d1d6f70dd85386c"},
+    {file = "apsw-3.49.0.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:17e0b68dd7a0f63ea6c9649daf007cf25510d8d650dd32c31152683b3259c82b"},
+    {file = "apsw-3.49.0.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:16804ad2707fdaec2f0f0a8f8398b660b745624e62414479f04a40e984dfcb6a"},
+    {file = "apsw-3.49.0.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c91e12f2c429128da98949b21ac6df16582dc9b4cbee3f3c8f8ea26bb7ddebe2"},
+    {file = "apsw-3.49.0.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ccfc1d3b0deed0845fc2ea60cd9b90d118f7235235beb8a6075fbca2f2aeba2d"},
+    {file = "apsw-3.49.0.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:cbd2f331902238b4519695c20d19b2bfe8c20f36b1fea0283195e645e63ac830"},
+    {file = "apsw-3.49.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:7ad9d74b85375d287e66f2e3e01d5c0769691118859b6d17e36efe8fa1e08b30"},
+    {file = "apsw-3.49.0.0-cp313-cp313-win32.whl", hash = "sha256:62dd4ba8c0dec0c20ef17322dec9ec9651d64aed1adf98bf9f5594ec9ba11efd"},
+    {file = "apsw-3.49.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:6e68629504726092a49e32fd4e7f4791a732a545f6af7ad991c8d47fa639c0fd"},
+    {file = "apsw-3.49.0.0.tar.gz", hash = "sha256:ac7a38a74ceadc820df66709dd7169d94f0f2cfba95670148602a96198f79c84"},
 ]
 
 [[package]]
@@ -114,10 +115,10 @@ files = [
 
 [[package]]
 name = "async-utils"
-version = "2025.1.24"
+version = "2025.2.10b0"
 requires_python = ">=3.12.0"
 git = "https://github.com/mikeshardmind/async-utils"
-revision = "63b63ecc9bf4307c4c7eb55066f47074770f251d"
+revision = "7ffe000328488d33dae040d4f284f3df489646c6"
 summary = "Various async utilities"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
@@ -203,12 +204,22 @@ files = [
 ]
 
 [[package]]
+name = "ciso8601"
+version = "2.3.2"
+summary = "Fast ISO8601 date time parser for Python written in C"
+groups = ["default"]
+marker = "python_full_version ~= \"3.13.0\""
+files = [
+    {file = "ciso8601-2.3.2.tar.gz", hash = "sha256:ec1616969aa46c51310b196022e5d3926f8d3fa52b80ec17f6b4133623bd5434"},
+]
+
+[[package]]
 name = "discord-py"
-version = "2.5.0a5150+g448df901"
+version = "2.5.0a5165+gde5acd34"
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "448df901e67500a4a9cede21cd157c5d4d2c7a83"
+revision = "de5acd34720e3aca4deec912b85d7d94358ce5fb"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
@@ -219,12 +230,12 @@ dependencies = [
 
 [[package]]
 name = "discord-py"
-version = "2.5.0a5150"
+version = "2.5.0a5165"
 extras = ["speed"]
 requires_python = ">=3.8"
 git = "https://github.com/mikeshardmind/discord.py"
 ref = "salamander-reloaded"
-revision = "448df901e67500a4a9cede21cd157c5d4d2c7a83"
+revision = "de5acd34720e3aca4deec912b85d7d94358ce5fb"
 summary = "A Python wrapper for the Discord API"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
@@ -277,13 +288,13 @@ files = [
 
 [[package]]
 name = "mikeshardmind-base2048"
-version = "1.0.0.post1"
+version = "1.0.2"
 requires_python = ">=3.9"
 summary = "Pure python Base-2048 binary-text encoding"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
 files = [
-    {file = "mikeshardmind_base2048-1.0.0.post1-py3-none-any.whl", hash = "sha256:59123156b887fa0a72eb9addeba883c835d5ea73a21da06f0939e95ea5ec5594"},
+    {file = "mikeshardmind_base2048-1.0.2-py3-none-any.whl", hash = "sha256:517bd6bad882a1fdbdfe55f619a384425e1abb792639e70a191da1b01993c5e5"},
 ]
 
 [[package]]
@@ -418,7 +429,7 @@ name = "scheduler"
 version = "2024.12.27"
 requires_python = ">=3.12"
 git = "https://github.com/mikeshardmind/discord-scheduler"
-revision = "fd751a9873b89fe28e310d2d8f43fd9b27b50745"
+revision = "753e69e4fc65301188854c90cbdc715f97a7d271"
 summary = "an easy scheduler for discord.py"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
@@ -443,14 +454,14 @@ files = [
 
 [[package]]
 name = "truststore"
-version = "0.10.0"
+version = "0.10.1"
 requires_python = ">=3.10"
 summary = "Verify certificates using native system trust stores"
 groups = ["default"]
 marker = "python_full_version ~= \"3.13.0\""
 files = [
-    {file = "truststore-0.10.0-py3-none-any.whl", hash = "sha256:b3798548e421ffe2ca2a6217cca49e7a17baf40b72d86a5505dc7d701e77d15b"},
-    {file = "truststore-0.10.0.tar.gz", hash = "sha256:5da347c665714fdfbd46f738c823fe9f0d8775e41ac5fb94f325749091187896"},
+    {file = "truststore-0.10.1-py3-none-any.whl", hash = "sha256:b64e6025a409a43ebdd2807b0c41c8bff49ea7ae6550b5087ac6df6619352d4c"},
+    {file = "truststore-0.10.1.tar.gz", hash = "sha256:eda021616b59021812e800fa0a071e51b266721bef3ce092db8a699e21c63539"},
 ]
 
 [[package]]

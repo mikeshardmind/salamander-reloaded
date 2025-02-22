@@ -45,12 +45,12 @@ async def rverb(itx: Interaction, expression: Expr, secret: bool = False) -> Non
         ex = Expression.from_str(expression)
         low, high, ev = ex.get_min(), ex.get_max(), ex.get_ev()
     except ZeroDivisionError:
-        return await send("Oops, too many dice. I dropped them", ephemeral=True)
+        await send("Oops, too many dice. I dropped them", ephemeral=True)
     except DiceError as err:
-        return await send(f"{err}", ephemeral=True)
-
-    msg = f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}"
-    return await send(msg, ephemeral=secret)
+        await send(f"{err}", ephemeral=True)
+    else:
+        msg = f"Information about dice Expression: {ex}:\nLow: {low}\nHigh: {high}\nEV: {ev:.7g}"
+        await send(msg, ephemeral=secret)
 
 
 exports = BotExports([dice_group])

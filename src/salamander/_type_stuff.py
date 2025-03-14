@@ -31,7 +31,7 @@ class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
 
 
 class DynButton(ui.Button[ui.View]):
-    async def callback(self, interaction: DInter) -> Any:
+    async def callback(self, interaction: DInter) -> object:
         pass
 
 
@@ -56,7 +56,7 @@ class DeleteMemberDataFunc(Protocol):
 
 class RawSubmittableCls(Protocol):
     @classmethod
-    async def raw_submit(cls, interaction: DInter, data: str) -> Any: ...
+    async def raw_submit(cls, interaction: DInter, data: str) -> object: ...
 
 
 class GetUserDataFunc(Protocol):
@@ -65,7 +65,7 @@ class GetUserDataFunc(Protocol):
 
 class RawSubmittableStatic(Protocol):
     @staticmethod
-    async def raw_submit(interaction: DInter, data: str) -> Any: ...
+    async def raw_submit(interaction: DInter, data: str) -> object: ...
 
 
 type RawSubmittable = RawSubmittableCls | RawSubmittableStatic

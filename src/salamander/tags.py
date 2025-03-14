@@ -35,7 +35,7 @@ class TagModal(discord.ui.Modal):
         custom_id: str = "",
         tag_name: str,
         author_id: int,
-    ):
+    ) -> None:
         disc_safe = b2048pack((author_id, tag_name))
         custom_id = f"m:tag:{disc_safe}"
         super().__init__(title=title, timeout=10, custom_id=custom_id)

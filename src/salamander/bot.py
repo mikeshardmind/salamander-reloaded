@@ -85,13 +85,13 @@ class PreemptiveBlocked(Exception):
 class Salamander(discord.AutoShardedClient):
     def __init__(
         self,
-        *args: Any,
+        *args: object,
         intents: discord.Intents | None = None,
         conn: apsw.Connection,
         read_conn: apsw.Connection,
         initial_exts: list[HasExports],
-        **kwargs: Any,
-    ):
+        **kwargs: object,
+    ) -> None:
         intents = intents or discord.Intents.none()
         super().__init__(*args, intents=intents, **kwargs)
         self.raw_modal_submits: dict[str, RawSubmittable] = {}
@@ -132,7 +132,7 @@ class Salamander(discord.AutoShardedClient):
                     dm = await self.create_dm(discord.Object(user_id, type=discord.User))
                     return await dm.send(embeds=embeds)
 
-                # todo: implement a threshold system for other http exceptions
+                # TODO: implement a threshold system for other http exceptions
                 except discord.NotFound:
                     # prevent deleted users from continuing to have stuff sent
                     await self.set_blocked(user_id, True)
@@ -259,12 +259,12 @@ class Salamander(discord.AutoShardedClient):
             unrecoverable_fail = False
 
             try:
-                # todo: batching of reminders by user
+                # TODO: batching of reminders by user
                 await self._send_embeds_dm(user_id, embeds=[embed])
             except (discord.NotFound, discord.Forbidden, PreemptiveBlocked):
                 unrecoverable_fail = True
             except discord.HTTPException as exc:
-                logging.exception(
+                log.exception(
                     "Could not handle reminder %r due to exception",
                     event,
                     exc_info=exc,

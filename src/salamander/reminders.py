@@ -331,7 +331,7 @@ async def remind_at(
             "-# This was scheduled using UTC, "
             "consider setting your timezone with /settings timezone"
         )
-        message = "\n".join((message, footer))
+        message = f"{message}\n{footer}"
     await itx.response.send_message(message, ephemeral=True)
 
 

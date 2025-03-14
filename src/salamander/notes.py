@@ -43,7 +43,7 @@ class NoteModal(discord.ui.Modal):
         custom_id: str = "",
         target_id: int,
         author_id: int,
-    ):
+    ) -> None:
         disc_safe = b2048pack((author_id, target_id))
         custom_id = f"m:note:{disc_safe}"
         super().__init__(title=title, timeout=10, custom_id=custom_id)

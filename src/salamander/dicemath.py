@@ -93,7 +93,7 @@ DIE_COMPONENT_RE = re.compile(
 
 
 class DiceError(Exception):
-    def __init__(self, msg: str | None = None, *args: Any):
+    def __init__(self, msg: str | None = None, *args: object) -> None:
         self.msg = msg
         super().__init__(msg, *args)
 
@@ -120,7 +120,7 @@ class NumberofDice:
         sides: int | str,
         kd: str | None = None,
         kdquant: str | None = None,
-    ):
+    ) -> None:
         self.quant = int(quant)
         self.sides = int(sides)
 
@@ -141,10 +141,10 @@ class NumberofDice:
             self.keep_low = 0
             self._kd_expr = ""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Die: {self}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.quant}d{self.sides}{self._kd_expr}"
 
     @property
@@ -222,16 +222,16 @@ def _die_or_component_fmt(x: Component, /) -> str:
 
 
 class Expression:
-    def __init__(self):
+    def __init__(self) -> None:
         self._components: list[Component] = []
         self._current_num_dice = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self._components:
             return "<Dice Expression '%s'>" % self
         return "<Empty Dice Expression>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return " ".join(map(_die_or_component_fmt, self._components))
 
     def add_dice(self, die: NumberofDice | int) -> None:

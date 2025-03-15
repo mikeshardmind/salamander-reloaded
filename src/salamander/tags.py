@@ -66,7 +66,7 @@ class TagModal(discord.ui.Modal):
                 DO UPDATE SET content=excluded.content;
                 """,
                 {"author_id": author_id, "tag_name": tag_name, "content": content},
-            ).get()
+            )
 
 
 @tag_group.command(name="create")
@@ -106,7 +106,7 @@ async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
             RETURNING tag_name
             """,
             (itx.user.id, name),
-        ).get()
+        ).fetchone()
     msg = "Tag Deleted" if row else "No such tag"
     await itx.edit_original_response(content=msg)
 

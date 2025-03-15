@@ -65,7 +65,7 @@ async def tz_set(itx: Interaction, zone: discord.app_commands.Range[str, 1, 70])
                 ON CONFLICT (user_id) DO UPDATE SET user_tz=excluded.user_tz
                 """,
                 (itx.user.id, zone),
-            ).get()
+            )
         _user_tz_lru[itx.user.id] = zone
         await itx.edit_original_response(content="Timezone set to %s" % zone)
 

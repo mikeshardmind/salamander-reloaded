@@ -79,18 +79,18 @@ class NoteModal(discord.ui.Modal):
                         "target_id": target_id,
                         "content": content,
                     },
-                ).get()
+                )
         except apsw.ConstraintError:
             too_many = True
         else:
             too_many = False
 
         if not too_many:
-            await interaction.edit_original_response(content="Note saved")
+            await interaction.followup.send(content="Note saved", ephemeral=True)
             _user_notes_lru.remove((author_id, target_id))
         else:
             msg = "You have 25 notes for this user already, enough!"
-            await interaction.edit_original_response(content=msg)
+            await interaction.followup.send(content=msg, ephemeral=True)
 
 
 async def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple[str, ...]:
@@ -224,7 +224,7 @@ class NotesView:
                     WHERE author_id = ? AND target_id = ? AND created_at = ?
                     """,
                     (user_id, target_id, ts),
-                ).get()
+                )
 
         await cls.edit_to_current_index(interaction, conn, user_id, target_id, idx, defer_used=True)
 

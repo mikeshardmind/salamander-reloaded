@@ -81,16 +81,12 @@ class NoteModal(discord.ui.Modal):
                     },
                 )
         except apsw.ConstraintError:
-            too_many = True
-        else:
-            too_many = False
-
-        if not too_many:
-            await interaction.followup.send(content="Note saved", ephemeral=True)
-            _user_notes_lru.remove((author_id, target_id))
-        else:
             msg = "You have 25 notes for this user already, enough!"
             await interaction.followup.send(content=msg, ephemeral=True)
+            return
+
+        _user_notes_lru.remove((author_id, target_id))
+        await interaction.followup.send(content="Note saved", ephemeral=True)
 
 
 async def get_user_notes(conn: apsw.Connection, author_id: int, user_id: int) -> tuple[str, ...]:

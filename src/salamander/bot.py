@@ -9,7 +9,6 @@ Copyright (C) 2020 Michael Hall <https://github.com/mikeshardmind>
 from __future__ import annotations
 
 import logging
-import logging.handlers
 import re
 from collections.abc import Sequence
 from datetime import timedelta

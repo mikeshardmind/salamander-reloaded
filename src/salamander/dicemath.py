@@ -77,7 +77,7 @@ OPS: dict[str, OperatorType] = {
 }
 
 # This needs this type so that a later thing doesn't need type ignores.
-# Essentially, we want to do. ROPS.get(thing_to_format)
+# Essentially, we want to do: ROPS.get(thing_to_format, thing_to_format)
 # and pyright yells about the keytype not being possible even when a default
 # is provided. This is dumb.
 ROPS: dict[OperatorType | NumberofDice | int, str] = {

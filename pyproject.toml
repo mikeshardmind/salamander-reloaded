@@ -97,7 +97,6 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "typing-extensions>=4.12.2",
     "xxhash>=3.4.1",
     "platformdirs>=4.2.2",
     "apsw>=3.47.0.0",

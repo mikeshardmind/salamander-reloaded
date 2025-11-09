@@ -115,15 +115,138 @@ version = "0.1.0"
 
 [tool.pyright]
 include = ["src"]
-typeCheckingMode = "strict"
+exclude = [
+    "**/__pycache__",
+    "build",
+    "dist",
+    "docs",
+]
+
 pythonVersion = "3.13"
 pythonPlatform = "All"
+
+
+# strict doesn't allow turning off / downgrading severity of rules
+typeCheckingMode = "standard"
+
+# type issues
+disableBytesTypePromotions = true
+strictParameterNoneValue = true
+reportMissingTypeStubs = "error"
+reportMissingModuleSource = "warning"
+reportInvalidTypeForm = "error"
+reportMissingImports = "error"
+reportUndefinedVariable = "error"
+reportInvalidTypeVarUse = "error"
+reportSelfClsParameterName = "error"
+
+reportAbstractUsage = "error"
+reportArgumentType = "error"
+reportAssertTypeFailure = "error"
+reportAssignmentType = "error"
+reportAttributeAccessIssue = "error"
+reportCallIssue = "error"
+reportGeneralTypeIssues = "error"
+reportInconsistentOverload = "error"
+reportIndexIssue = "error"
+reportInvalidTypeArguments = "error"
+reportNoOverloadImplementation = "error"
+reportOperatorIssue = "error"
+reportOptionalSubscript = "error"
+reportOptionalMemberAccess = "error"
+reportOptionalCall = "error"
+reportOptionalIterable = "error"
+reportOptionalContextManager = "error"
+reportOptionalOperand = "error"
+reportReturnType = "error"
+reportTypedDictNotRequiredAccess = "error"
+reportUnhashable = "error"
+reportUnusedExcept = "error"
+reportFunctionMemberAccess = "error"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportOverlappingOverload = "error"
+reportPossiblyUnboundVariable = "error"
+reportConstantRedefinition = "error"
+reportDeprecated = "warning"
+
+reportIncompleteStub = "error"
+reportInconsistentConstructor = "error"
+reportInvalidStubStatement = "error"
+reportMatchNotExhaustive = "error"
+reportMissingParameterType = "error"
+
+reportUnknownArgumentType = "error"
+reportUnknownLambdaType = "error"
+reportUnknownMemberType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+reportUnnecessaryCast = "warning"
+
 reportCallInDefaultInitializer = "warning"
-reportImportCycles = "error"
+reportMissingSuperCall = "none"
 reportPropertyTypeMismatch = "error"
-reportShadowedImports = "error"
-reportUninitializedInstanceVariable = "error"
+
+# other type-issues
+
+reportUntypedBaseClass = "warning"  # spec says treat this as Any
+reportUntypedClassDecorator = "warning"  # spec says (Any) -> Any
+reportUntypedFunctionDecorator = "warning"  # spec says (Any) -> Any
+reportUntypedNamedTuple = "none"  # Just no.
+
+# not type issues, even if pyright and mypy offer checks as if they were
+# by calling them "Strict mode checks"
+# these are "opinionated errors with well-defined type interpretation"
+
+reportImplicitOverride = "none"
+reportMissingTypeArgument = "none"
+deprecateTypingAliases = false
+reportUnnecessaryComparison = "none"
+reportUnnecessaryContains = "none"
+reportUnnecessaryIsInstance = "none"
+reportAssertAlwaysTrue = "none"
+reportTypeCommentUsage = "none"
+
+# reasonably preventing accidents
+
 reportUnnecessaryTypeIgnoreComment = "warning"
+
+reportUnsupportedDunderAll = "error"
+reportWildcardImportFromLibrary = "error"
+reportShadowedImports = "warning"
+
+reportUninitializedInstanceVariable = "warning"
+reportUnusedCoroutine = "warning"
+reportUnusedExpression = "warning"
+
+reportPrivateUsage = "warning"
+reportPrivateImportUsage = "warning"
+
+reportInvalidStringEscapeSequence = "error"
+reportRedeclaration = "error"
+reportUnboundVariable = "error"
+
+reportUnusedClass = "warning"
+reportUnusedImport = "warning"
+reportUnusedFunction = "warning"
+reportUnusedVariable = "warning"
+
+# analysis behavior
+enableTypeIgnoreComments = true
+enableReachabilityAnalysis = true
+analyzeUnannotatedFunctions = true
+reportImportCycles = "error"
+enableExperimentalFeatures = false
+
+# inference settings
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+
+# overly-worriesome linter-esque options
+reportImplicitStringConcatenation = "none"
+reportUnusedCallResult = "none"
+reportDuplicateImport = "none"  # handled by ruff
 
 
 [tool.pdm.scripts]

@@ -98,6 +98,7 @@ async def user_tag_get(itx: Interaction, name: Range[str, 1, 20]) -> None:
 async def user_tag_del(itx: Interaction, name: Range[str, 1, 20]) -> None:
     """Delete a tag."""
     await itx.response.defer(ephemeral=True)
+    row = None
     with itx.client.conn:
         row = itx.client.conn.execute(
             """

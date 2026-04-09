@@ -47,7 +47,9 @@ def run_setup() -> None:
     store_token(token)
 
 
-def _run_bot(loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signals | SpecialExit]) -> None:
+def _run_bot(
+    loop: asyncio.AbstractEventLoop, queue: asyncio.Queue[signal.Signals | SpecialExit]
+) -> None:
     db_path = str(platformdir_stuff.user_data_path / "salamander.db")
 
     loop.set_task_factory(asyncio.eager_task_factory)

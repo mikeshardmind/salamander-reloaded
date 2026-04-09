@@ -13,8 +13,7 @@ from typing import Any, Literal, NamedTuple, Protocol
 
 import apsw
 import msgspec
-from discord import Interaction as DInter
-from discord import app_commands, ui
+from discord import Interaction, app_commands, ui
 from scheduler import DiscordBotScheduler
 
 
@@ -31,7 +30,7 @@ class Reminder(msgspec.Struct, gc=False, frozen=True, array_like=True):
 
 
 class DynButton(ui.Button[ui.View]):
-    async def callback(self, interaction: DInter) -> object:
+    async def callback(self, interaction: Interaction) -> object:
         pass
 
 
@@ -56,7 +55,7 @@ class DeleteMemberDataFunc(Protocol):
 
 class RawSubmittableCls(Protocol):
     @classmethod
-    async def raw_submit(cls, interaction: DInter, data: str) -> object: ...
+    async def raw_submit(cls, interaction: Interaction, data: str) -> object: ...
 
 
 class GetUserDataFunc(Protocol):
@@ -65,7 +64,7 @@ class GetUserDataFunc(Protocol):
 
 class RawSubmittableStatic(Protocol):
     @staticmethod
-    async def raw_submit(interaction: DInter, data: str) -> object: ...
+    async def raw_submit(interaction: Interaction, data: str) -> object: ...
 
 
 type RawSubmittable = RawSubmittableCls | RawSubmittableStatic

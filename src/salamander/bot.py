@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from datetime import timedelta
 from typing import Any, Self, override
 
+import aiohttp
 import apsw
 import discord
 import msgspec
@@ -89,10 +90,10 @@ class Salamander(discord.AutoShardedClient):
         conn: apsw.Connection,
         read_conn: apsw.Connection,
         initial_exts: list[HasExports],
-        **kwargs: object,
+        connector: aiohttp.BaseConnector | None = None,
     ) -> None:
         intents = intents or discord.Intents.none()
-        super().__init__(*args, intents=intents, **kwargs)
+        super().__init__(*args, intents=intents, connector=connector)
         self.raw_modal_submits: dict[str, RawSubmittable] = {}
         self.raw_button_submits: dict[str, RawSubmittable] = {}
         self.tree = VersionableTree.from_salamander(self)

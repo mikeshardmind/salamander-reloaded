@@ -430,7 +430,7 @@ class Expression:
 
         while expr := expr.strip():
             if c % 2:
-                if op := OPS.get(expr[0], None):
+                if op := OPS.get(expr[0]):
                     obj.add_operator(op)
                     expr = expr[1:]
                 else:

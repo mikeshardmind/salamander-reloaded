@@ -17,7 +17,6 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Protocol, TypeVar, cast
 
-import apsw
 import apsw.ext
 
 from .utils import platformdir_stuff, resolve_path_with_links
@@ -41,6 +40,7 @@ class KnownWarningFilter(logging.Filter):
     known_messages = (
         "Guilds intent seems to be disabled. This may cause state related issues.",
         "PyNaCl is not installed, voice will NOT be supported",
+        "davey is not installed, voice will NOT be supported",
     )
 
     def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:

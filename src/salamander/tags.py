@@ -124,7 +124,7 @@ async def tag_ac(itx: Interaction, current: str) -> list[Choice[str]]:
         """,
         (itx.user.id, current),
     )
-    return [Choice(name=name, value=value) for (name, value) in cursor]
+    return [Choice(name=name, value=name) for (name,) in cursor]
 
 
 exports = BotExports([tag_group], {"tag": TagModal})

@@ -117,6 +117,16 @@ class Salamander(discord.AutoShardedClient):
 
         return {owner, *(t.id for t in team.members)}
 
+    @taskcache(86400)  # at most, daily
+    async def prune_old_users(self) -> None:
+        with self.conn:
+            self.conn.execute(
+                """
+                DELETE FROM discord_users
+                WHERE datetime(CURRENT_TIMESTAMP, '-1 year') > last_interaction;
+                """
+            )
+
     async def _send_embeds_dm(
         self,
         user_id: int,
@@ -149,6 +159,7 @@ class Salamander(discord.AutoShardedClient):
                 """,
                 ((user_id,) for user_id in user_ids),
             )
+        await self.prune_old_users()
 
     async def on_interaction(self, interaction: discord.Interaction[Self]) -> None:
         if not await self.is_blocked(interaction.user.id):

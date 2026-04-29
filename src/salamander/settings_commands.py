@@ -24,7 +24,7 @@ settings_group = discord.app_commands.Group(
 )
 
 
-_user_tz_lru: LRU[int, str] = LRU(128)
+_user_tz_lru: LRU[int, str] = LRU(256)
 
 
 async def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
@@ -43,7 +43,8 @@ async def get_user_tz(conn: apsw.Connection, user_id: int) -> str:
         (user_id,),
     ).fetchone()
     assert row is not None, "Upsert + returning guaranteed to return a row"
-    return row[0]
+    user_tz = _user_tz_lru[user_id] = row[0]
+    return user_tz
 
 
 @settings_group.command(name="timezone", description="Set your timezone")

@@ -76,11 +76,6 @@ class BotExports(NamedTuple):
     commands: list[AppCommandTypes] | None = None
     raw_modal_submits: dict[str, type[RawSubmittable]] | None = None
     raw_button_submits: dict[str, type[RawSubmittable]] | None = None
-    delete_all_data_func: DeleteAllDataFunc | None = None
-    delete_user_data_func: DeleteUserDataFunc | None = None
-    delete_guild_data_func: DeleteGuildDataFunc | None = None
-    delete_member_data_func: DeleteMemberDataFunc | None = None
-    get_user_data_func: GetUserDataFunc | None = None
 
 
 class HasExports(Protocol):

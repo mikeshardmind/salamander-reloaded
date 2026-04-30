@@ -1,7 +1,7 @@
 [tool.ruff]
 
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 preview = true
 
 [tool.ruff.format]
@@ -117,7 +117,7 @@ version = "0.1.0"
 [tool.pyright]
 include = ["src"]
 
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 pythonPlatform = "All"
 
 

@@ -272,7 +272,7 @@ class Salamander(discord.AutoShardedClient):
             try:
                 # TODO: batching of reminders by user
                 await self._send_embeds_dm(user_id, embeds=[embed])
-            except (discord.NotFound, discord.Forbidden, PreemptiveBlocked):
+            except discord.NotFound, discord.Forbidden, PreemptiveBlocked:
                 unrecoverable_fail = True
             except discord.HTTPException as exc:
                 log.exception(

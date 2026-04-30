@@ -158,7 +158,7 @@ def _run_bot(
                         "exception": exc,
                         "task": task,
                     })
-            except (asyncio.InvalidStateError, asyncio.CancelledError):
+            except asyncio.InvalidStateError, asyncio.CancelledError:
                 pass
 
         asyncio.set_event_loop(None)

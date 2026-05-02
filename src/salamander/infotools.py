@@ -38,15 +38,8 @@ async def raw_content(itx: Interaction, message: discord.Message) -> None:
         await send("No content", ephemeral=True)
         return
 
-    if len(c) < 1000:
-        escaped = discord.utils.escape_markdown(c)
-        if len(escaped) < 1500:
-            embed = discord.Embed(description=f"```\n{escaped}\n```")
-            await send(embed=embed, ephemeral=True)
-            return
-
     f = discord.File(io.BytesIO(c.encode()))
-    await send(content="Attached long raw content", ephemeral=True, file=f)
+    await send(content="Attached raw content", ephemeral=True, file=f)
 
 
 exports = BotExports([user_avatar, raw_content])

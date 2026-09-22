@@ -60,7 +60,7 @@ def _run_bot(
 
     connector = aiohttp.TCPConnector(
         happy_eyeballs_delay=None,
-        family=socket.AddressFamily.AF_INET,
+        family=socket.AddressFamily.AF_INET,  # discord only allows ipv4 connections
         ttl_dns_cache=60,
         loop=loop,
         ssl_context=ssl_ctx,

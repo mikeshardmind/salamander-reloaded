@@ -50,8 +50,9 @@ class ReminderView:
         item = items[index]
         reminder = item.unpack_extra(Reminder)
         assert reminder, "Invariantly exists for all Reminder managed items."
+        content = reminder.content or "Reminder was created without a description."
         ts = item.get_arrow_time()
-        embed = discord.Embed(description=reminder.content, timestamp=ts.datetime)
+        embed = discord.Embed(description=content, timestamp=ts.datetime)
 
         first_disabled = index == 0
         last_disabled = index == ln - 1
@@ -109,8 +110,7 @@ class ReminderView:
             return
         await interaction.response.defer(ephemeral=True)
         if action == "delete":
-            sched: DiscordBotScheduler = interaction.client.sched
-            await sched.unschedule_uuid(tid)
+            await interaction.client.sched.unschedule_uuid(tid)
         await cls.edit_to_current_index(interaction, user_id, idx, defer_used=True)
 
 
@@ -137,7 +137,8 @@ async def remind_in(
     ts = DiscordBotScheduler.time_str_from_params(
         when.year, when.month, when.day, when.hour, when.minute
     )
-    # make a fake jump url here
+    # make a jump url here, works without the message object even still
+    # (or ever) existing, client jumps based on snowflake
     guild_id = itx.guild_id or "@me"
     channel_id = itx.channel_id
     message_id = discord.utils.time_snowflake(now)
